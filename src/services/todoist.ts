@@ -9,6 +9,11 @@ export async function quickAddTask(text: string) {
   return api.quickAddTask({ text });
 }
 
+// Add task with explicit due string (bypasses NLP parsing issues)
+export async function addTaskWithDue(content: string, dueString: string) {
+  return api.addTask({ content, dueString });
+}
+
 // Get tasks filtered by Todoist filter syntax
 export async function getTasksByFilter(filter: string): Promise<FormattedTask[]> {
   const response = await api.getTasksByFilter({ query: filter });

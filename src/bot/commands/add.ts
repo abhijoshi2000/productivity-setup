@@ -1,5 +1,5 @@
 import { Context } from 'telegraf';
-import { quickAddTask } from '../../services/todoist';
+import { quickAddTask, addTaskWithDue } from '../../services/todoist';
 import { priorityEmoji, formatDueDate } from '../../services/parser';
 
 export function registerAddCommand(bot: any) {
@@ -9,7 +9,7 @@ export function registerAddCommand(bot: any) {
       : '';
 
     if (!text) {
-      await ctx.reply('📝 Usage: /add <task text>\n_e.g. /add Buy milk #Personal tomorrow p2_', {
+      await ctx.reply('📝 Usage: /add <task text>\n_e.g. /add Buy milk #Personal tomorrow p2_\n_e.g. /add PT | every wednesday at 11:05_', {
         parse_mode: 'Markdown',
       });
       return;
@@ -32,7 +32,12 @@ export function registerAddCommand(bot: any) {
 
 async function addTask(ctx: Context, text: string) {
   try {
-    const result = await quickAddTask(text);
+    // Support "task name | due string" syntax for explicit date separation
+    const pipeIndex = text.indexOf('|');
+    const result = pipeIndex !== -1
+      ? await addTaskWithDue(text.slice(0, pipeIndex).trim(), text.slice(pipeIndex + 1).trim())
+      : await quickAddTask(text);
+
     const emoji = priorityEmoji(result.priority);
     const dueInfo = result.due
       ? {
