@@ -13,6 +13,7 @@ const HELP_TEXT = `
 
 📅 *Daily View*
 /today — Today's calendar + tasks
+/tomorrow — Tomorrow's calendar + tasks
 /week — Week-at-a-glance (7-day timeline)
 /briefing — Full daily briefing
 

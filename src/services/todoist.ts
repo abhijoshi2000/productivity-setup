@@ -49,6 +49,11 @@ export async function getOverdueTasks(): Promise<FormattedTask[]> {
   return getTasksByFilter('overdue');
 }
 
+// Get tasks due tomorrow
+export async function getTomorrowTasks(): Promise<FormattedTask[]> {
+  return getTasksByFilter('tomorrow');
+}
+
 // Get tasks due within the next 7 days
 export async function getWeekTasks(): Promise<FormattedTask[]> {
   return getTasksByFilter('7 days');

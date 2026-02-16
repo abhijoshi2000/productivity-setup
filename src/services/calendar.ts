@@ -91,6 +91,13 @@ export async function getTodayEvents(): Promise<CalendarEvent[]> {
   return getEventsForDateRange(startOfDay, endOfDay);
 }
 
+export async function getTomorrowEvents(): Promise<CalendarEvent[]> {
+  const now = new Date();
+  const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const endOfTomorrow = new Date(startOfTomorrow.getTime() + 24 * 60 * 60 * 1000);
+  return getEventsForDateRange(startOfTomorrow, endOfTomorrow);
+}
+
 export async function getWeekEvents(): Promise<CalendarEvent[]> {
   const now = new Date();
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
