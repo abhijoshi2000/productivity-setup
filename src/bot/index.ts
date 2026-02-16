@@ -9,6 +9,7 @@ import { registerDoneCommand } from './commands/done';
 import { registerProjectsCommand } from './commands/projects';
 import { registerStatsCommand } from './commands/stats';
 import { registerBriefingCommand } from './commands/briefing';
+import { registerWeekCommand } from './commands/week';
 
 export function createBot(): Telegraf {
   const bot = new Telegraf(config.telegram.botToken);
@@ -24,6 +25,7 @@ export function createBot(): Telegraf {
   registerProjectsCommand(bot);
   registerStatsCommand(bot);
   registerBriefingCommand(bot);
+  registerWeekCommand(bot);
 
   // Add command + plain-text handler registered last
   registerAddCommand(bot);

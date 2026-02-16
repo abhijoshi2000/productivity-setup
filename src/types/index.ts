@@ -22,6 +22,7 @@ export interface CalendarEvent {
   end: Date;
   isAllDay: boolean;
   location?: string;
+  calendarId?: string;
 }
 
 export interface FormattedTask {

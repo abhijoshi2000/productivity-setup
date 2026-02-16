@@ -24,7 +24,10 @@ export const config = {
   google: {
     serviceAccountEmail: optionalEnv('GOOGLE_SERVICE_ACCOUNT_EMAIL', ''),
     privateKey: optionalEnv('GOOGLE_PRIVATE_KEY', '').replace(/\\n/g, '\n'),
-    calendarId: optionalEnv('GOOGLE_CALENDAR_ID', ''),
+    calendarIds: optionalEnv('GOOGLE_CALENDAR_IDS', '')
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean),
   },
   webhook: {
     url: optionalEnv('WEBHOOK_URL', ''),
@@ -34,4 +37,4 @@ export const config = {
 };
 
 export const isCalendarConfigured = (): boolean =>
-  !!(config.google.serviceAccountEmail && config.google.privateKey && config.google.calendarId);
+  !!(config.google.serviceAccountEmail && config.google.privateKey && config.google.calendarIds.length > 0);
