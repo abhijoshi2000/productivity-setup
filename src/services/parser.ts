@@ -1,3 +1,40 @@
+import { CalendarEvent, MeetingBlock } from '../types';
+
+export function separateAndMergeBusy(events: CalendarEvent[]): { namedEvents: CalendarEvent[]; meetingBlocks: MeetingBlock[] } {
+  const namedEvents: CalendarEvent[] = [];
+  const busyTimed: CalendarEvent[] = [];
+
+  for (const event of events) {
+    if (event.isAllDay || event.summary !== 'Busy') {
+      namedEvents.push(event);
+    } else {
+      busyTimed.push(event);
+    }
+  }
+
+  // Sort busy events by start time
+  busyTimed.sort((a, b) => a.start.getTime() - b.start.getTime());
+
+  const meetingBlocks: MeetingBlock[] = [];
+  for (const event of busyTimed) {
+    const last = meetingBlocks[meetingBlocks.length - 1];
+    if (last && event.start.getTime() - last.end.getTime() <= 5 * 60 * 1000) {
+      // Extend existing block
+      if (event.end > last.end) last.end = event.end;
+    } else {
+      meetingBlocks.push({ start: new Date(event.start), end: new Date(event.end) });
+    }
+  }
+
+  return { namedEvents, meetingBlocks };
+}
+
+export function formatMeetingBlocks(blocks: MeetingBlock[]): string {
+  if (blocks.length === 0) return '';
+  const ranges = blocks.map(b => `${formatTime(b.start)} – ${formatTime(b.end)}`);
+  return `🏢 Meetings: ${ranges.join(', ')}`;
+}
+
 export function priorityEmoji(priority: number): string {
   switch (priority) {
     case 4: return '🔴';  // Todoist p1 = priority 4

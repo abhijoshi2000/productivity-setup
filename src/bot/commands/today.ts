@@ -2,7 +2,7 @@ import { Context } from 'telegraf';
 import { getTodayTasks, getOverdueTasks } from '../../services/todoist';
 import { getTodayEvents } from '../../services/calendar';
 import { isCalendarConfigured } from '../../config';
-import { priorityEmoji, formatTime, formatDueDate, timeUntil } from '../../services/parser';
+import { priorityEmoji, formatTime, formatDueDate, timeUntil, separateAndMergeBusy, formatMeetingBlocks } from '../../services/parser';
 import { setTaskMappings, setTaskListMessageId } from '../../services/session';
 
 export function registerTodayCommand(bot: any) {
@@ -29,8 +29,11 @@ export function registerTodayCommand(bot: any) {
 
       // Calendar events
       if (events.length > 0) {
+        const { namedEvents, meetingBlocks } = separateAndMergeBusy(events);
         lines.push('🗓 *Schedule*');
-        for (const event of events) {
+        const meetingLine = formatMeetingBlocks(meetingBlocks);
+        if (meetingLine) lines.push(`  ${meetingLine}`);
+        for (const event of namedEvents) {
           if (event.isAllDay) {
             lines.push(`  📌 ${event.summary} _(all day)_`);
           } else {

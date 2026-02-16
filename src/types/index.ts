@@ -26,6 +26,11 @@ export interface CalendarEvent {
   calendarId?: string;
 }
 
+export interface MeetingBlock {
+  start: Date;
+  end: Date;
+}
+
 export interface FormattedTask {
   id: string;
   content: string;

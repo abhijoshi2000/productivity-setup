@@ -2,7 +2,7 @@ import { Context } from 'telegraf';
 import { getWeekTasks } from '../../services/todoist';
 import { getWeekEvents } from '../../services/calendar';
 import { isCalendarConfigured } from '../../config';
-import { priorityEmoji, formatTime, formatDate } from '../../services/parser';
+import { priorityEmoji, formatTime, formatDate, separateAndMergeBusy, formatMeetingBlocks } from '../../services/parser';
 import { CalendarEvent, FormattedTask } from '../../types';
 
 function dateKey(date: Date): string {
@@ -67,7 +67,10 @@ export function registerWeekCommand(bot: any) {
         if (dayEvents.length === 0 && dayTasks.length === 0) {
           lines.push('  No events or tasks');
         } else {
-          for (const event of dayEvents) {
+          const { namedEvents: dayNamed, meetingBlocks: dayMeetings } = separateAndMergeBusy(dayEvents);
+          const meetingLine = formatMeetingBlocks(dayMeetings);
+          if (meetingLine) lines.push(`  ${meetingLine}`);
+          for (const event of dayNamed) {
             if (event.isAllDay) {
               lines.push(`  📌 ${event.summary} _(all day)_`);
             } else {

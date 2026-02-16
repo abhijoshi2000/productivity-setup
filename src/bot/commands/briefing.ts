@@ -9,6 +9,8 @@ import {
   progressBar,
   streakEmoji,
   timeUntil,
+  separateAndMergeBusy,
+  formatMeetingBlocks,
 } from '../../services/parser';
 
 // Generate briefing text (reusable by cron and command)
@@ -33,8 +35,11 @@ export async function generateBriefing(): Promise<string> {
 
   // Schedule
   if (events.length > 0) {
+    const { namedEvents, meetingBlocks } = separateAndMergeBusy(events);
     lines.push('🗓 *Schedule*');
-    for (const event of events) {
+    const meetingLine = formatMeetingBlocks(meetingBlocks);
+    if (meetingLine) lines.push(`  ${meetingLine}`);
+    for (const event of namedEvents) {
       if (event.isAllDay) {
         lines.push(`  📌 ${event.summary} _(all day)_`);
       } else {

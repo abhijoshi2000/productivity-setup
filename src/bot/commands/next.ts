@@ -22,7 +22,8 @@ export function registerNextCommand(bot: any) {
         const until = timeUntil(event.start);
         const location = event.location ? `\n  📍 ${event.location}` : '';
         lines.push(`🗓 *Next Event*`);
-        lines.push(`  ${time} — ${event.summary} _(${until})_${location}`);
+        const summary = event.summary === 'Busy' ? 'Meeting' : event.summary;
+        lines.push(`  ${time} — ${summary} _(${until})_${location}`);
       } else if (isCalendarConfigured()) {
         lines.push('🗓 *Next Event*\n  No upcoming events in the next 8 hours');
       }

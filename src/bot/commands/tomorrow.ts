@@ -2,7 +2,7 @@ import { Context } from 'telegraf';
 import { getTomorrowTasks } from '../../services/todoist';
 import { getTomorrowEvents } from '../../services/calendar';
 import { isCalendarConfigured } from '../../config';
-import { priorityEmoji, formatTime, formatDueDate } from '../../services/parser';
+import { priorityEmoji, formatTime, formatDueDate, separateAndMergeBusy, formatMeetingBlocks } from '../../services/parser';
 
 export function registerTomorrowCommand(bot: any) {
   bot.command('tomorrow', async (ctx: Context) => {
@@ -25,8 +25,11 @@ export function registerTomorrowCommand(bot: any) {
 
       // Calendar events
       if (events.length > 0) {
+        const { namedEvents, meetingBlocks } = separateAndMergeBusy(events);
         lines.push('🗓 *Schedule*');
-        for (const event of events) {
+        const meetingLine = formatMeetingBlocks(meetingBlocks);
+        if (meetingLine) lines.push(`  ${meetingLine}`);
+        for (const event of namedEvents) {
           if (event.isAllDay) {
             lines.push(`  📌 ${event.summary} _(all day)_`);
           } else {
