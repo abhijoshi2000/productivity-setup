@@ -33,6 +33,7 @@ export const config = {
     url: optionalEnv('WEBHOOK_URL', ''),
     port: parseInt(optionalEnv('WEBHOOK_PORT', '3000'), 10),
   },
+  timezone: optionalEnv('TIMEZONE', 'America/New_York'),
   briefingCron: optionalEnv('BRIEFING_CRON', '0 7 * * *'),
   reminderCron: optionalEnv('REMINDER_CRON', '*/5 * * * *'),
   reminderMinutes: parseInt(optionalEnv('REMINDER_MINUTES', '15'), 10),

@@ -1,7 +1,7 @@
 import { Context } from 'telegraf';
 import { getTodayTasks, getOverdueTasks } from '../../services/todoist';
 import { getTodayEvents } from '../../services/calendar';
-import { isCalendarConfigured } from '../../config';
+import { isCalendarConfigured, config } from '../../config';
 import { priorityEmoji, formatTime, formatDueDate, timeUntil, separateAndMergeBusy, formatMeetingBlocks } from '../../services/parser';
 import { setTaskMappings, setTaskListMessageId } from '../../services/session';
 
@@ -23,9 +23,11 @@ export function registerTodayCommand(bot: any) {
         weekday: 'long',
         month: 'long',
         day: 'numeric',
+        timeZone: config.timezone,
       });
 
-      lines.push(`📅 *${dateStr}*\n`);
+      lines.push(`📅 *${dateStr}*`);
+      lines.push('');
 
       // Calendar events
       if (events.length > 0) {
@@ -44,7 +46,9 @@ export function registerTodayCommand(bot: any) {
         }
         lines.push('');
       } else if (isCalendarConfigured()) {
-        lines.push('🗓 *Schedule*\n  No events today\n');
+        lines.push('🗓 *Schedule*');
+        lines.push('  No events today');
+        lines.push('');
       }
 
       // Overdue tasks
@@ -72,11 +76,13 @@ export function registerTodayCommand(bot: any) {
           lines.push(`  ${idx}. ${emoji} ${task.content}${due}${project}`);
         });
       } else {
-        lines.push('✅ *Today\'s Tasks*\n  All clear! 🎉');
+        lines.push('✅ *Today\'s Tasks*');
+        lines.push('  All clear! 🎉');
       }
 
       const total = allTasks.length;
-      lines.push(`\n📊 ${total} task${total !== 1 ? 's' : ''} total`);
+      lines.push('');
+      lines.push(`📊 ${total} task${total !== 1 ? 's' : ''} total`);
 
       const sent = await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown' });
       setTaskListMessageId(chatId, sent.message_id);

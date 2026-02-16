@@ -16,7 +16,8 @@ export function registerReviewCommand(bot: any) {
       ]);
 
       const lines: string[] = [];
-      lines.push('📊 *Weekly Review*\n');
+      lines.push('📊 *Weekly Review*');
+      lines.push('');
 
       // Completed this week
       lines.push(`✅ *Completed This Week: ${completedCount}*`);
@@ -62,7 +63,8 @@ export function registerReviewCommand(bot: any) {
 
       // Week events count
       if (isCalendarConfigured()) {
-        lines.push(`\n🗓 ${weekEvents.length} event${weekEvents.length !== 1 ? 's' : ''} this week`);
+        lines.push('');
+        lines.push(`🗓 ${weekEvents.length} event${weekEvents.length !== 1 ? 's' : ''} this week`);
       }
 
       await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown' });

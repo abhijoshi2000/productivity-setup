@@ -46,7 +46,7 @@ async function main() {
     } catch (error) {
       console.error('❌ Failed to send daily briefing:', error);
     }
-  });
+  }, { timezone: config.timezone });
 
   // Event reminder cron job
   if (isCalendarConfigured()) {
@@ -86,7 +86,7 @@ async function main() {
       } catch (error) {
         console.error('❌ Event reminder error:', error);
       }
-    });
+    }, { timezone: config.timezone });
     console.log(`⏰ Event reminders active (every ${config.reminderCron}, ${config.reminderMinutes}min before)`);
   }
 

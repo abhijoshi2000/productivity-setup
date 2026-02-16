@@ -1,7 +1,7 @@
 import { Context } from 'telegraf';
 import { getTodayTasks, getOverdueTasks, getProductivityStats } from '../../services/todoist';
 import { getTodayEvents } from '../../services/calendar';
-import { isCalendarConfigured } from '../../config';
+import { isCalendarConfigured, config } from '../../config';
 import {
   priorityEmoji,
   formatTime,
@@ -27,11 +27,13 @@ export async function generateBriefing(): Promise<string> {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
+    timeZone: config.timezone,
   });
 
   const lines: string[] = [];
   lines.push(`☀️ *Good morning! Daily Briefing*`);
-  lines.push(`📅 ${dateStr}\n`);
+  lines.push(`📅 ${dateStr}`);
+  lines.push('');
 
   // Schedule
   if (events.length > 0) {

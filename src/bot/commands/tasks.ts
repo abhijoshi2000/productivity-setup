@@ -39,7 +39,8 @@ export function registerTasksCommand(bot: any) {
       }
 
       const lines: string[] = [];
-      lines.push(`📋 *Tasks — ${filterLabel}* (${tasks.length})\n`);
+      lines.push(`📋 *Tasks — ${filterLabel}* (${tasks.length})`);
+      lines.push('');
 
       for (const task of tasks) {
         const mapping = mappings.find((m) => m.taskId === task.id);
@@ -52,7 +53,8 @@ export function registerTasksCommand(bot: any) {
         lines.push(`${idx} ${emoji} ${task.content}${due}${project}${labels}`);
       }
 
-      lines.push(`\n💡 Use /done <number> to complete a task`);
+      lines.push('');
+      lines.push('💡 Use /done <number> to complete a task');
 
       const sent = await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown' });
       setTaskListMessageId(chatId, sent.message_id);

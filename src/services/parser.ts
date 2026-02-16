@@ -1,4 +1,5 @@
 import { CalendarEvent, MeetingBlock } from '../types';
+import { config } from '../config';
 
 export function separateAndMergeBusy(events: CalendarEvent[]): { namedEvents: CalendarEvent[]; meetingBlocks: MeetingBlock[] } {
   const namedEvents: CalendarEvent[] = [];
@@ -55,6 +56,7 @@ export function formatTime(date: Date): string {
     hour: '2-digit',
     minute: '2-digit',
     hour12: true,
+    timeZone: config.timezone,
   });
 }
 
@@ -63,6 +65,7 @@ export function formatDate(date: Date): string {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
+    timeZone: config.timezone,
   });
 }
 

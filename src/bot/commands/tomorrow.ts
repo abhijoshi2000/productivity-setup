@@ -1,7 +1,7 @@
 import { Context } from 'telegraf';
 import { getTomorrowTasks } from '../../services/todoist';
 import { getTomorrowEvents } from '../../services/calendar';
-import { isCalendarConfigured } from '../../config';
+import { isCalendarConfigured, config } from '../../config';
 import { priorityEmoji, formatTime, formatDueDate, separateAndMergeBusy, formatMeetingBlocks } from '../../services/parser';
 
 export function registerTomorrowCommand(bot: any) {
@@ -18,10 +18,12 @@ export function registerTomorrowCommand(bot: any) {
         weekday: 'long',
         month: 'long',
         day: 'numeric',
+        timeZone: config.timezone,
       });
 
       const lines: string[] = [];
-      lines.push(`📅 *${dateStr}*\n`);
+      lines.push(`📅 *${dateStr}*`);
+      lines.push('');
 
       // Calendar events
       if (events.length > 0) {
@@ -38,7 +40,9 @@ export function registerTomorrowCommand(bot: any) {
         }
         lines.push('');
       } else if (isCalendarConfigured()) {
-        lines.push('🗓 *Schedule*\n  No events tomorrow\n');
+        lines.push('🗓 *Schedule*');
+        lines.push('  No events tomorrow');
+        lines.push('');
       }
 
       // Tasks
@@ -51,11 +55,12 @@ export function registerTomorrowCommand(bot: any) {
           lines.push(`  ${emoji} ${task.content}${due}${project}`);
         }
       } else {
-        lines.push('✅ *Tasks*\n  Nothing scheduled — enjoy! 🎉');
+        lines.push('✅ *Tasks*');
+        lines.push('  Nothing scheduled — enjoy! 🎉');
       }
 
-      const total = events.length + tasks.length;
-      lines.push(`\n📊 ${events.length} event${events.length !== 1 ? 's' : ''} · ${tasks.length} task${tasks.length !== 1 ? 's' : ''}`);
+      lines.push('');
+      lines.push(`📊 ${events.length} event${events.length !== 1 ? 's' : ''} · ${tasks.length} task${tasks.length !== 1 ? 's' : ''}`);
 
       await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown' });
     } catch (error) {

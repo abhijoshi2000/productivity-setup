@@ -1,7 +1,7 @@
 import { Context } from 'telegraf';
 import { getWeekTasks } from '../../services/todoist';
 import { getWeekEvents } from '../../services/calendar';
-import { isCalendarConfigured } from '../../config';
+import { isCalendarConfigured, config } from '../../config';
 import { priorityEmoji, formatTime, formatDate, separateAndMergeBusy, formatMeetingBlocks } from '../../services/parser';
 import { CalendarEvent, FormattedTask } from '../../types';
 
@@ -47,11 +47,12 @@ export function registerWeekCommand(bot: any) {
       // Header
       const firstDay = days[0];
       const lastDay = days[6];
-      const headerStart = firstDay.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      const headerEnd = lastDay.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const headerStart = firstDay.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: config.timezone });
+      const headerEnd = lastDay.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: config.timezone });
 
       const lines: string[] = [];
-      lines.push(`📅 *Week of ${headerStart} – ${headerEnd}*\n`);
+      lines.push(`📅 *Week of ${headerStart} – ${headerEnd}*`);
+      lines.push('');
 
       let totalEvents = 0;
       let totalTasks = 0;

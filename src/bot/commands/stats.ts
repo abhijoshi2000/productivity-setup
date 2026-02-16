@@ -13,7 +13,8 @@ export function registerStatsCommand(bot: any) {
       const trend = trendEmoji(stats.karmaTrend);
 
       const lines: string[] = [];
-      lines.push('📊 *Productivity Stats*\n');
+      lines.push('📊 *Productivity Stats*');
+      lines.push('');
 
       lines.push('*Today*');
       lines.push(`  ${dailyBar} ${stats.completedToday}/${stats.dailyGoal} tasks`);
