@@ -1,8 +1,10 @@
 import express from 'express';
 import cron from 'node-cron';
-import { config } from './config';
+import { config, isCalendarConfigured } from './config';
 import { createBot } from './bot';
 import { generateBriefing } from './bot/commands/briefing';
+import { getUpcomingEvents } from './services/calendar';
+import { formatTime } from './services/parser';
 
 async function main() {
   const bot = createBot();
@@ -45,6 +47,48 @@ async function main() {
       console.error('❌ Failed to send daily briefing:', error);
     }
   });
+
+  // Event reminder cron job
+  if (isCalendarConfigured()) {
+    const notifiedEvents = new Set<string>();
+
+    cron.schedule(config.reminderCron, async () => {
+      try {
+        const events = await getUpcomingEvents(config.reminderMinutes);
+        const now = new Date();
+
+        for (const event of events) {
+          const key = `${event.summary}|${event.start.toISOString()}`;
+          if (notifiedEvents.has(key)) continue;
+
+          const diffMs = event.start.getTime() - now.getTime();
+          const diffMin = Math.round(diffMs / 60000);
+          const time = formatTime(event.start);
+          const location = event.location ? `\n📍 ${event.location}` : '';
+
+          await bot.telegram.sendMessage(
+            config.telegram.allowedUserId,
+            `⏰ *Reminder:* ${event.summary} at ${time} _(in ${diffMin}m)_${location}`,
+            { parse_mode: 'Markdown' },
+          );
+          notifiedEvents.add(key);
+          console.log(`⏰ Reminder sent: ${event.summary} in ${diffMin}m`);
+        }
+
+        // Cleanup: remove entries for events >1 hour in the past
+        for (const key of notifiedEvents) {
+          const isoStr = key.split('|')[1];
+          const eventTime = new Date(isoStr);
+          if (now.getTime() - eventTime.getTime() > 60 * 60 * 1000) {
+            notifiedEvents.delete(key);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Event reminder error:', error);
+      }
+    });
+    console.log(`⏰ Event reminders active (every ${config.reminderCron}, ${config.reminderMinutes}min before)`);
+  }
 
   // Graceful shutdown
   const shutdown = (signal: string) => {

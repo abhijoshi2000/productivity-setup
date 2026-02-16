@@ -1,0 +1,49 @@
+import { Context } from 'telegraf';
+import { getTodayTasks } from '../../services/todoist';
+import { getUpcomingEvents } from '../../services/calendar';
+import { isCalendarConfigured } from '../../config';
+import { priorityEmoji, formatTime, timeUntil } from '../../services/parser';
+
+export function registerNextCommand(bot: any) {
+  bot.command('next', async (ctx: Context) => {
+    try {
+      const [events, tasks] = await Promise.all([
+        isCalendarConfigured() ? getUpcomingEvents(480) : Promise.resolve([]),
+        getTodayTasks(),
+      ]);
+
+      const lines: string[] = [];
+      lines.push('⏭ *What\'s Next*\n');
+
+      // Next event
+      if (events.length > 0) {
+        const event = events[0];
+        const time = formatTime(event.start);
+        const until = timeUntil(event.start);
+        const location = event.location ? `\n  📍 ${event.location}` : '';
+        lines.push(`🗓 *Next Event*`);
+        lines.push(`  ${time} — ${event.summary} _(${until})_${location}`);
+      } else if (isCalendarConfigured()) {
+        lines.push('🗓 *Next Event*\n  No upcoming events in the next 8 hours');
+      }
+
+      // Next task (highest priority first)
+      if (tasks.length > 0) {
+        const sorted = [...tasks].sort((a, b) => b.priority - a.priority);
+        const task = sorted[0];
+        const emoji = priorityEmoji(task.priority);
+        const project = task.projectName ? ` · ${task.projectName}` : '';
+        lines.push('');
+        lines.push('✅ *Next Task*');
+        lines.push(`  ${emoji} ${task.content}${project}`);
+      } else {
+        lines.push('\n✅ *Next Task*\n  All tasks done! 🎉');
+      }
+
+      await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown' });
+    } catch (error) {
+      console.error('Failed to fetch next view:', error);
+      await ctx.reply('❌ Failed to load next view. Please try again.');
+    }
+  });
+}

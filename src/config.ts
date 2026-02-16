@@ -34,6 +34,8 @@ export const config = {
     port: parseInt(optionalEnv('WEBHOOK_PORT', '3000'), 10),
   },
   briefingCron: optionalEnv('BRIEFING_CRON', '0 7 * * *'),
+  reminderCron: optionalEnv('REMINDER_CRON', '*/5 * * * *'),
+  reminderMinutes: parseInt(optionalEnv('REMINDER_MINUTES', '15'), 10),
 };
 
 export const isCalendarConfigured = (): boolean =>

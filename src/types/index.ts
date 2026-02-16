@@ -14,6 +14,7 @@ export interface SessionData {
   taskMappings: TaskMapping[];
   lastCommand: string;
   chatId: number;
+  lastTaskListMessageId?: number;
 }
 
 export interface CalendarEvent {

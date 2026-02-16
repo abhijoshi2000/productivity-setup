@@ -69,6 +69,22 @@ export async function getTask(taskId: string) {
   return api.getTask(taskId);
 }
 
+// Reschedule a task with a new due string
+export async function rescheduleTask(taskId: string, dueString: string): Promise<void> {
+  await api.updateTask(taskId, { dueString });
+}
+
+// Update task priority
+export async function updateTaskPriority(taskId: string, priority: number): Promise<void> {
+  await api.updateTask(taskId, { priority });
+}
+
+// Get tasks completed this week
+export async function getCompletedThisWeek(): Promise<number> {
+  const stats = await api.getProductivityStats();
+  return stats.weekItems?.[0]?.totalCompleted ?? 0;
+}
+
 // Project caching (refreshed every 5 minutes)
 let projectCache: ProjectInfo[] | null = null;
 let projectCacheTime = 0;

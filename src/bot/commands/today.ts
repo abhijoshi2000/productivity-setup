@@ -3,7 +3,7 @@ import { getTodayTasks, getOverdueTasks } from '../../services/todoist';
 import { getTodayEvents } from '../../services/calendar';
 import { isCalendarConfigured } from '../../config';
 import { priorityEmoji, formatTime, formatDueDate, timeUntil } from '../../services/parser';
-import { setTaskMappings } from '../../services/session';
+import { setTaskMappings, setTaskListMessageId } from '../../services/session';
 
 export function registerTodayCommand(bot: any) {
   bot.command('today', async (ctx: Context) => {
@@ -75,7 +75,8 @@ export function registerTodayCommand(bot: any) {
       const total = allTasks.length;
       lines.push(`\n📊 ${total} task${total !== 1 ? 's' : ''} total`);
 
-      await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown' });
+      const sent = await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown' });
+      setTaskListMessageId(chatId, sent.message_id);
     } catch (error) {
       console.error('Failed to fetch today view:', error);
       await ctx.reply('❌ Failed to load today\'s view. Please try again.');

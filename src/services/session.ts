@@ -31,6 +31,15 @@ export function getTaskByIndex(chatId: number, index: number): TaskMapping | und
   return session.taskMappings.find((m) => m.index === index);
 }
 
+export function setTaskListMessageId(chatId: number, messageId: number): void {
+  const session = getSession(chatId);
+  session.lastTaskListMessageId = messageId;
+}
+
+export function getTaskListMessageId(chatId: number): number | undefined {
+  return getSession(chatId).lastTaskListMessageId;
+}
+
 export function getTaskByFuzzyMatch(chatId: number, query: string): TaskMapping | undefined {
   const session = getSession(chatId);
   const lower = query.toLowerCase();

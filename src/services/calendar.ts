@@ -104,3 +104,12 @@ export async function getWeekEvents(): Promise<CalendarEvent[]> {
   const endOfWeek = new Date(startOfDay.getTime() + 7 * 24 * 60 * 60 * 1000);
   return getEventsForDateRange(startOfDay, endOfWeek);
 }
+
+export async function getUpcomingEvents(withinMinutes: number): Promise<CalendarEvent[]> {
+  if (!isCalendarConfigured()) return [];
+  const now = new Date();
+  const end = new Date(now.getTime() + withinMinutes * 60 * 1000);
+  const events = await getEventsForDateRange(now, end);
+  // Filter to future non-all-day events only
+  return events.filter((e) => !e.isAllDay && e.start > now);
+}
