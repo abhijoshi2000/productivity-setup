@@ -14,7 +14,6 @@ export function registerNextCommand(bot: any) {
 
       const lines: string[] = [];
       lines.push('⏭ *What\'s Next*');
-      lines.push('');
 
       // Next event
       if (events.length > 0) {
@@ -36,11 +35,9 @@ export function registerNextCommand(bot: any) {
         const task = sorted[0];
         const emoji = priorityEmoji(task.priority);
         const project = task.projectName ? ` · ${task.projectName}` : '';
-        lines.push('');
         lines.push('✅ *Next Task*');
         lines.push(`  ${emoji} ${task.content}${project}`);
       } else {
-        lines.push('');
         lines.push('✅ *Next Task*');
         lines.push('  All tasks done! 🎉');
       }

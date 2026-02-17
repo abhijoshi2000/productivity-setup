@@ -27,7 +27,6 @@ export function registerTodayCommand(bot: any) {
       });
 
       lines.push(`📅 *${dateStr}*`);
-      lines.push('');
 
       // Calendar events
       if (events.length > 0) {
@@ -44,11 +43,9 @@ export function registerTodayCommand(bot: any) {
             lines.push(`  🕐 ${time} — ${event.summary}${until}`);
           }
         }
-        lines.push('');
       } else if (isCalendarConfigured()) {
         lines.push('🗓 *Schedule*');
         lines.push('  No events today');
-        lines.push('');
       }
 
       // Overdue tasks
@@ -59,7 +56,6 @@ export function registerTodayCommand(bot: any) {
           const due = task.due ? ` _(${formatDueDate(task.due)})_` : '';
           lines.push(`  ${emoji} ${task.content}${due}`);
         }
-        lines.push('');
       }
 
       // Today's tasks
@@ -81,7 +77,6 @@ export function registerTodayCommand(bot: any) {
       }
 
       const total = allTasks.length;
-      lines.push('');
       lines.push(`📊 ${total} task${total !== 1 ? 's' : ''} total`);
 
       const sent = await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown' });

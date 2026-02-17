@@ -33,7 +33,6 @@ export async function generateBriefing(): Promise<string> {
   const lines: string[] = [];
   lines.push(`☀️ *Good morning! Daily Briefing*`);
   lines.push(`📅 ${dateStr}`);
-  lines.push('');
 
   // Schedule
   if (events.length > 0) {
@@ -50,7 +49,6 @@ export async function generateBriefing(): Promise<string> {
         lines.push(`  🕐 ${time} — ${event.summary}${until}`);
       }
     }
-    lines.push('');
   }
 
   // Overdue
@@ -62,7 +60,6 @@ export async function generateBriefing(): Promise<string> {
     if (overdueTasks.length > 5) {
       lines.push(`  _... and ${overdueTasks.length - 5} more_`);
     }
-    lines.push('');
   }
 
   // Today's tasks
@@ -76,7 +73,6 @@ export async function generateBriefing(): Promise<string> {
   } else {
     lines.push('  No tasks scheduled — enjoy your day! 🎉');
   }
-  lines.push('');
 
   // Stats snapshot
   const dailyBar = progressBar(stats.completedToday, stats.dailyGoal, 8);

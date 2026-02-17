@@ -17,11 +17,9 @@ export function registerReviewCommand(bot: any) {
 
       const lines: string[] = [];
       lines.push('📊 *Weekly Review*');
-      lines.push('');
 
       // Completed this week
       lines.push(`✅ *Completed This Week: ${completedCount}*`);
-      lines.push('');
 
       // Slipped / overdue
       if (overdueTasks.length > 0) {
@@ -34,7 +32,6 @@ export function registerReviewCommand(bot: any) {
         if (overdueTasks.length > 5) {
           lines.push(`  _...and ${overdueTasks.length - 5} more_`);
         }
-        lines.push('');
       }
 
       // Coming up this week
@@ -48,7 +45,6 @@ export function registerReviewCommand(bot: any) {
         if (weekTasks.length > 5) {
           lines.push(`  _...and ${weekTasks.length - 5} more_`);
         }
-        lines.push('');
       }
 
       // Weekly stats
@@ -63,7 +59,6 @@ export function registerReviewCommand(bot: any) {
 
       // Week events count
       if (isCalendarConfigured()) {
-        lines.push('');
         lines.push(`🗓 ${weekEvents.length} event${weekEvents.length !== 1 ? 's' : ''} this week`);
       }
 

@@ -52,7 +52,6 @@ export function registerWeekCommand(bot: any) {
 
       const lines: string[] = [];
       lines.push(`📅 *Week of ${headerStart} – ${headerEnd}*`);
-      lines.push('');
 
       let totalEvents = 0;
       let totalTasks = 0;
@@ -87,7 +86,6 @@ export function registerWeekCommand(bot: any) {
 
         totalEvents += dayEvents.length;
         totalTasks += dayTasks.length;
-        lines.push('');
       }
 
       lines.push(`📊 ${totalEvents} event${totalEvents !== 1 ? 's' : ''} · ${totalTasks} task${totalTasks !== 1 ? 's' : ''} this week`);
