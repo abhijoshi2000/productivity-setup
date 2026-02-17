@@ -10,7 +10,7 @@ export function registerAddCommand(bot: any) {
       : '';
 
     if (!text) {
-      await ctx.reply('📝 Usage: /add <task text>\n_e.g. /add Buy milk #Personal tomorrow p2_\n_e.g. /add PT | every wednesday at 11:05_\n_e.g. /add Appointment #Physical-Therapy | Feb 18 at 11am for 1 hour_', {
+      await ctx.reply('📝 Usage: /add <task text>\n_e.g. /add Buy milk #Personal tomorrow p2_\n_e.g. /add PT | every wednesday at 11:05_\n_e.g. /add Appointment #Physical-Therapy | Feb 18 at 11am for 1 hour_\n_e.g. /add Appointment #Physical-Therapy | Feb 18 at 11am | 1 hour_', {
         parse_mode: 'Markdown',
       });
       return;
@@ -114,16 +114,18 @@ async function handleTaskAction(ctx: Context, chatId: number, text: string) {
 
 async function addTask(ctx: Context, text: string) {
   try {
-    // Support "task name | due string" syntax for explicit date separation
-    const pipeIndex = text.indexOf('|');
+    // Support pipe-delimited syntax:
+    //   "task name | due string" (2-part)
+    //   "task name | due string | duration" (3-part)
+    const parts = text.split('|').map(s => s.trim());
 
     let result;
     let projectName: string | undefined;
     let durationMinutes: number | undefined;
 
-    if (pipeIndex !== -1) {
-      let content = text.slice(0, pipeIndex).trim();
-      let dueString = text.slice(pipeIndex + 1).trim();
+    if (parts.length >= 2) {
+      let content = parts[0];
+      let dueString = parts[1];
 
       // Extract #ProjectName from content
       let projectId: string | undefined;
@@ -139,21 +141,39 @@ async function addTask(ctx: Context, text: string) {
         content = content.replace(/#[\w-]+/, '').replace(/\s{2,}/g, ' ').trim();
       }
 
-      // Parse duration from due string (e.g. "for 1 hour", "for 30 min")
       let duration: number | undefined;
       let durationUnit: 'minute' | 'day' | undefined;
-      const durationMatch = dueString.match(/\bfor\s+(\d+(?:\.\d+)?)\s*(hours?|hrs?|h|minutes?|mins?|m)\b/i);
-      if (durationMatch) {
-        const value = parseFloat(durationMatch[1]);
-        const unit = durationMatch[2].toLowerCase();
-        if (unit.startsWith('h')) {
-          durationMinutes = Math.round(value * 60);
-        } else {
-          durationMinutes = Math.round(value);
+
+      if (parts.length >= 3) {
+        // 3-part syntax: "task | due | duration"
+        const durationPart = parts[2];
+        const durationMatch = durationPart.match(/(?:for\s+)?(\d+(?:\.\d+)?)\s*(hours?|hrs?|h|minutes?|mins?|m)/i);
+        if (durationMatch) {
+          const value = parseFloat(durationMatch[1]);
+          const unit = durationMatch[2].toLowerCase();
+          if (unit.startsWith('h')) {
+            durationMinutes = Math.round(value * 60);
+          } else {
+            durationMinutes = Math.round(value);
+          }
+          duration = durationMinutes;
+          durationUnit = 'minute';
         }
-        duration = durationMinutes;
-        durationUnit = 'minute';
-        dueString = dueString.replace(durationMatch[0], '').trim();
+      } else {
+        // 2-part syntax: parse duration from due string (e.g. "for 1 hour", "for 30 min")
+        const durationMatch = dueString.match(/\bfor\s+(\d+(?:\.\d+)?)\s*(hours?|hrs?|h|minutes?|mins?|m)\b/i);
+        if (durationMatch) {
+          const value = parseFloat(durationMatch[1]);
+          const unit = durationMatch[2].toLowerCase();
+          if (unit.startsWith('h')) {
+            durationMinutes = Math.round(value * 60);
+          } else {
+            durationMinutes = Math.round(value);
+          }
+          duration = durationMinutes;
+          durationUnit = 'minute';
+          dueString = dueString.replace(durationMatch[0], '').trim();
+        }
       }
 
       result = await addTaskWithDue(content, dueString, projectId, duration, durationUnit);
