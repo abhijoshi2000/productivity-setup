@@ -38,7 +38,7 @@ export function registerWeekCommand(bot: any) {
       // Group tasks by due date
       const tasksByDate = new Map<string, FormattedTask[]>();
       for (const task of tasks) {
-        const key = task.due?.date ?? dateKey(now);
+        const key = (task.due?.date ?? dateKey(now)).substring(0, 10);
         const list = tasksByDate.get(key) ?? [];
         list.push(task);
         tasksByDate.set(key, list);
