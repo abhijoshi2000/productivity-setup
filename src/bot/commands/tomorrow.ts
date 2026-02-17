@@ -23,6 +23,7 @@ export function registerTomorrowCommand(bot: any) {
 
       const lines: string[] = [];
       lines.push(`📅 *${dateStr}*`);
+      lines.push('');
 
       // Calendar events
       if (events.length > 0) {
@@ -37,9 +38,11 @@ export function registerTomorrowCommand(bot: any) {
             lines.push(`  🕐 ${formatTime(event.start)} — ${event.summary}`);
           }
         }
+        lines.push('');
       } else if (isCalendarConfigured()) {
         lines.push('🗓 *Schedule*');
         lines.push('  No events tomorrow');
+        lines.push('');
       }
 
       // Tasks
@@ -56,6 +59,7 @@ export function registerTomorrowCommand(bot: any) {
         lines.push('  Nothing scheduled — enjoy! 🎉');
       }
 
+      lines.push('');
       lines.push(`📊 ${events.length} event${events.length !== 1 ? 's' : ''} · ${tasks.length} task${tasks.length !== 1 ? 's' : ''}`);
 
       await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown' });

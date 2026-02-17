@@ -13,6 +13,7 @@ export function registerProjectsCommand(bot: any) {
 
       const lines: string[] = [];
       lines.push('📂 *Projects*');
+      lines.push('');
 
       // Sort: favorites first, then by task count descending
       const sorted = [...projects].sort((a, b) => {
@@ -27,6 +28,7 @@ export function registerProjectsCommand(bot: any) {
       }
 
       const totalTasks = projects.reduce((sum, p) => sum + p.taskCount, 0);
+      lines.push('');
       lines.push(`📊 ${projects.length} projects · ${totalTasks} total tasks`);
 
       await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown' });
