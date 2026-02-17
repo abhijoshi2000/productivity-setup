@@ -10,7 +10,7 @@ export function registerAddCommand(bot: any) {
       : '';
 
     if (!text) {
-      await ctx.reply('📝 Usage: /add <task text>\n_e.g. /add Buy milk #Personal tomorrow p2_\n_e.g. /add PT | every wednesday at 11:05_\n_e.g. /add Appointment #Physical-Therapy | Feb 18 at 11am for 1 hour_\n_e.g. /add Appointment #Physical-Therapy | Feb 18 at 11am | 1 hour_', {
+      await ctx.reply('📝 Usage: /add <task text>\n_e.g. /add Buy milk #Personal tomorrow p2_\n_e.g. /add PT | every wednesday at 11:05_\n_e.g. /add Appointment #Physical-Therapy | Feb 18 at 11am for 1 hour_\n_e.g. /add Appointment #Physical-Therapy | Feb 18 at 11am | 1 hour_\n_e.g. /add Meeting | Feb 18 | 9:00am to 10:00am_', {
         parse_mode: 'Markdown',
       });
       return;
@@ -145,10 +145,25 @@ async function addTask(ctx: Context, text: string) {
       let durationUnit: 'minute' | 'day' | undefined;
 
       if (parts.length >= 3) {
-        // 3-part syntax: "task | due | duration"
+        // 3-part syntax: "task | due | duration or time range"
         const durationPart = parts[2];
+
+        // Try explicit duration first (e.g. "1 hour", "for 30 min")
         const durationMatch = durationPart.match(/(?:for\s+)?(\d+(?:\.\d+)?)\s*(hours?|hrs?|h|minutes?|mins?|m)/i);
-        if (durationMatch) {
+        // Try time range (e.g. "9:00am to 10:00am", "9am-10:30am")
+        const rangeMatch = durationPart.match(/^(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:to|-|–)\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)$/i);
+
+        if (rangeMatch) {
+          const startMinutes = parseTimeToMinutes(rangeMatch[1]);
+          const endMinutes = parseTimeToMinutes(rangeMatch[2]);
+          if (startMinutes !== null && endMinutes !== null && endMinutes > startMinutes) {
+            durationMinutes = endMinutes - startMinutes;
+            duration = durationMinutes;
+            durationUnit = 'minute';
+            // Append start time to due string
+            dueString = `${dueString} at ${rangeMatch[1].trim()}`;
+          }
+        } else if (durationMatch) {
           const value = parseFloat(durationMatch[1]);
           const unit = durationMatch[2].toLowerCase();
           if (unit.startsWith('h')) {
@@ -202,4 +217,15 @@ async function addTask(ctx: Context, text: string) {
     console.error('Failed to add task:', error);
     await ctx.reply('❌ Failed to add task. Please try again.');
   }
+}
+
+function parseTimeToMinutes(time: string): number | null {
+  const match = time.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);
+  if (!match) return null;
+  let hours = parseInt(match[1], 10);
+  const minutes = match[2] ? parseInt(match[2], 10) : 0;
+  const meridiem = match[3]?.toLowerCase();
+  if (meridiem === 'pm' && hours !== 12) hours += 12;
+  if (meridiem === 'am' && hours === 12) hours = 0;
+  return hours * 60 + minutes;
 }
