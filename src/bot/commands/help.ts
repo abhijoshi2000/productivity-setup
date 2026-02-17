@@ -6,6 +6,8 @@ const HELP_TEXT = `
 📝 *Task Management*
 /add <text> — Quick-add a task (NLP supported)
   _e.g. /add Buy milk #Personal tomorrow p2_
+  Use pipe for reliable dates: /add Task #Project | date for duration
+  _e.g. /add PT #Physical-Therapy | Feb 18 at 11am for 1 hour_
 /tasks — List your tasks (filterable)
   _e.g. /tasks, /tasks #Work, /tasks @urgent_
 /done <#|text> — Complete a task

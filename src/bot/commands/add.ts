@@ -1,5 +1,5 @@
 import { Context } from 'telegraf';
-import { quickAddTask, addTaskWithDue, completeTask, rescheduleTask, updateTaskPriority } from '../../services/todoist';
+import { quickAddTask, addTaskWithDue, completeTask, rescheduleTask, updateTaskPriority, getCachedProjects } from '../../services/todoist';
 import { priorityEmoji, formatDueDate } from '../../services/parser';
 import { getTaskListMessageId, getTaskByIndex, getTaskByFuzzyMatch } from '../../services/session';
 
@@ -10,7 +10,7 @@ export function registerAddCommand(bot: any) {
       : '';
 
     if (!text) {
-      await ctx.reply('📝 Usage: /add <task text>\n_e.g. /add Buy milk #Personal tomorrow p2_\n_e.g. /add PT | every wednesday at 11:05_', {
+      await ctx.reply('📝 Usage: /add <task text>\n_e.g. /add Buy milk #Personal tomorrow p2_\n_e.g. /add PT | every wednesday at 11:05_\n_e.g. /add Appointment #Physical-Therapy | Feb 18 at 11am for 1 hour_', {
         parse_mode: 'Markdown',
       });
       return;
@@ -116,9 +116,50 @@ async function addTask(ctx: Context, text: string) {
   try {
     // Support "task name | due string" syntax for explicit date separation
     const pipeIndex = text.indexOf('|');
-    const result = pipeIndex !== -1
-      ? await addTaskWithDue(text.slice(0, pipeIndex).trim(), text.slice(pipeIndex + 1).trim())
-      : await quickAddTask(text);
+
+    let result;
+    let projectName: string | undefined;
+    let durationMinutes: number | undefined;
+
+    if (pipeIndex !== -1) {
+      let content = text.slice(0, pipeIndex).trim();
+      let dueString = text.slice(pipeIndex + 1).trim();
+
+      // Extract #ProjectName from content
+      let projectId: string | undefined;
+      const projectMatch = content.match(/#([\w-]+)/);
+      if (projectMatch) {
+        const tag = projectMatch[1];
+        const projects = await getCachedProjects();
+        const matched = projects.find((p) => p.name.toLowerCase() === tag.toLowerCase());
+        if (matched) {
+          projectId = matched.id;
+          projectName = matched.name;
+        }
+        content = content.replace(/#[\w-]+/, '').replace(/\s{2,}/g, ' ').trim();
+      }
+
+      // Parse duration from due string (e.g. "for 1 hour", "for 30 min")
+      let duration: number | undefined;
+      let durationUnit: 'minute' | 'day' | undefined;
+      const durationMatch = dueString.match(/\bfor\s+(\d+(?:\.\d+)?)\s*(hours?|hrs?|h|minutes?|mins?|m)\b/i);
+      if (durationMatch) {
+        const value = parseFloat(durationMatch[1]);
+        const unit = durationMatch[2].toLowerCase();
+        if (unit.startsWith('h')) {
+          durationMinutes = Math.round(value * 60);
+        } else {
+          durationMinutes = Math.round(value);
+        }
+        duration = durationMinutes;
+        durationUnit = 'minute';
+        dueString = dueString.replace(durationMatch[0], '').trim();
+      }
+
+      result = await addTaskWithDue(content, dueString, projectId, duration, durationUnit);
+    } else {
+      result = await quickAddTask(text);
+    }
 
     const emoji = priorityEmoji(result.priority);
     const dueInfo = result.due
@@ -129,9 +170,13 @@ async function addTask(ctx: Context, text: string) {
         }
       : undefined;
     const due = dueInfo ? `\n📅 ${formatDueDate(dueInfo)}` : '';
+    const project = projectName ? `\n📁 ${projectName}` : '';
+    const durationDisplay = durationMinutes
+      ? `\n⏱ ${durationMinutes >= 60 ? `${durationMinutes / 60} hour${durationMinutes / 60 !== 1 ? 's' : ''}` : `${durationMinutes} min`}`
+      : '';
 
     await ctx.reply(
-      `✅ Task added!\n\n${emoji} ${result.content}${due}`,
+      `✅ Task added!\n\n${emoji} ${result.content}${project}${due}${durationDisplay}`,
     );
   } catch (error) {
     console.error('Failed to add task:', error);

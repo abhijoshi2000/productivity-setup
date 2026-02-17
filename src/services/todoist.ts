@@ -10,8 +10,18 @@ export async function quickAddTask(text: string) {
 }
 
 // Add task with explicit due string (bypasses NLP parsing issues)
-export async function addTaskWithDue(content: string, dueString: string) {
-  return api.addTask({ content, dueString });
+export async function addTaskWithDue(
+  content: string,
+  dueString: string,
+  projectId?: string,
+  duration?: number,
+  durationUnit?: 'minute' | 'day',
+) {
+  const base = { content, dueString, ...(projectId && { projectId }) };
+  if (duration && durationUnit) {
+    return api.addTask({ ...base, duration, durationUnit });
+  }
+  return api.addTask(base);
 }
 
 // Get tasks filtered by Todoist filter syntax
