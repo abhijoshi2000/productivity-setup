@@ -1,6 +1,7 @@
 import { Telegraf } from 'telegraf';
 import { config } from '../config';
 import { authGuard } from './middleware/auth';
+import { registerActionHandlers } from './actions';
 import { registerHelpCommand } from './commands/help';
 import { registerAddCommand } from './commands/add';
 import { registerTodayCommand } from './commands/today';
@@ -14,12 +15,21 @@ import { registerWeekCommand } from './commands/week';
 import { registerRescheduleCommand } from './commands/reschedule';
 import { registerNextCommand } from './commands/next';
 import { registerReviewCommand } from './commands/review';
+import { registerEveningCommand } from './commands/evening';
+import { registerUndoCommand } from './commands/undo';
+import { registerSearchCommand } from './commands/search';
+import { registerFreeCommand } from './commands/free';
+import { registerBlockCommand } from './commands/block';
+import { registerFocusCommand } from './commands/focus';
 
 export function createBot(): Telegraf {
   const bot = new Telegraf(config.telegram.botToken);
 
   // Auth middleware — all messages must pass through
   bot.use(authGuard);
+
+  // Inline keyboard action handlers (callback queries)
+  registerActionHandlers(bot);
 
   // Register commands (order matters — specific commands before generic text handler)
   registerHelpCommand(bot);
@@ -34,6 +44,12 @@ export function createBot(): Telegraf {
   registerRescheduleCommand(bot);
   registerNextCommand(bot);
   registerReviewCommand(bot);
+  registerEveningCommand(bot);
+  registerUndoCommand(bot);
+  registerSearchCommand(bot);
+  registerFreeCommand(bot);
+  registerBlockCommand(bot);
+  registerFocusCommand(bot);
 
   // Add command + plain-text handler registered last
   registerAddCommand(bot);

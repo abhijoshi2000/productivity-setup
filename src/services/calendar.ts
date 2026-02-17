@@ -1,9 +1,9 @@
 import { google } from 'googleapis';
-import { config, isCalendarConfigured } from '../config';
+import { config, isCalendarConfigured, isCalendarWriteConfigured } from '../config';
 import { CalendarEvent } from '../types';
 
 /** Return a Date representing midnight N days from today in the configured timezone. */
-function startOfDayInTz(offsetDays = 0): Date {
+export function startOfDayInTz(offsetDays = 0): Date {
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-CA', { timeZone: config.timezone });
   const [year, month, day] = dateStr.split('-').map(Number);
@@ -105,6 +105,40 @@ export async function getTomorrowEvents(): Promise<CalendarEvent[]> {
 
 export async function getWeekEvents(): Promise<CalendarEvent[]> {
   return getEventsForDateRange(startOfDayInTz(0), startOfDayInTz(7));
+}
+
+function getCalendarWriteClient() {
+  const auth = new google.auth.JWT({
+    email: config.google.serviceAccountEmail,
+    key: config.google.privateKey,
+    scopes: ['https://www.googleapis.com/auth/calendar.events'],
+  });
+  return google.calendar({ version: 'v3', auth });
+}
+
+export async function createEvent(
+  summary: string,
+  startTime: Date,
+  endTime: Date,
+  description?: string,
+): Promise<{ id: string; htmlLink: string }> {
+  if (!isCalendarWriteConfigured()) {
+    throw new Error('Calendar write not configured');
+  }
+  const calendar = getCalendarWriteClient();
+  const response = await calendar.events.insert({
+    calendarId: config.google.writableCalendarId,
+    requestBody: {
+      summary,
+      description,
+      start: { dateTime: startTime.toISOString(), timeZone: config.timezone },
+      end: { dateTime: endTime.toISOString(), timeZone: config.timezone },
+    },
+  });
+  return {
+    id: response.data.id ?? '',
+    htmlLink: response.data.htmlLink ?? '',
+  };
 }
 
 export async function getUpcomingEvents(withinMinutes: number): Promise<CalendarEvent[]> {

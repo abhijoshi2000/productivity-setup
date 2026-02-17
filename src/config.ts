@@ -28,6 +28,7 @@ export const config = {
       .split(',')
       .map((id) => id.trim())
       .filter(Boolean),
+    writableCalendarId: optionalEnv('GOOGLE_WRITABLE_CALENDAR_ID', ''),
   },
   webhook: {
     url: optionalEnv('WEBHOOK_URL', ''),
@@ -35,9 +36,16 @@ export const config = {
   },
   timezone: optionalEnv('TIMEZONE', 'America/New_York'),
   briefingCron: optionalEnv('BRIEFING_CRON', '0 7 * * *'),
+  eveningCron: optionalEnv('EVENING_CRON', '0 18 * * *'),
   reminderCron: optionalEnv('REMINDER_CRON', '*/5 * * * *'),
   reminderMinutes: parseInt(optionalEnv('REMINDER_MINUTES', '15'), 10),
+  workHoursStart: optionalEnv('WORK_HOURS_START', '09:00'),
+  workHoursEnd: optionalEnv('WORK_HOURS_END', '18:00'),
 };
 
 export const isCalendarConfigured = (): boolean =>
   !!(config.google.serviceAccountEmail && config.google.privateKey && config.google.calendarIds.length > 0);
+
+export const isCalendarWriteConfigured = (): boolean =>
+  isCalendarConfigured() && !!config.google.writableCalendarId;
+

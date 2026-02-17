@@ -2,6 +2,7 @@ import { Context } from 'telegraf';
 import { getTasksByFilter, getTodayTasks } from '../../services/todoist';
 import { priorityEmoji, formatDueDate } from '../../services/parser';
 import { setTaskMappings, setTaskListMessageId } from '../../services/session';
+import { buildTaskKeyboard } from '../actions';
 
 export function registerTasksCommand(bot: any) {
   bot.command('tasks', async (ctx: Context) => {
@@ -56,7 +57,11 @@ export function registerTasksCommand(bot: any) {
       lines.push('');
       lines.push('💡 Use /done <number> to complete a task');
 
-      const sent = await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown' });
+      const keyboard = buildTaskKeyboard(tasks);
+      const sent = await ctx.reply(lines.join('\n'), {
+        parse_mode: 'Markdown',
+        ...keyboard,
+      });
       setTaskListMessageId(chatId, sent.message_id);
     } catch (error) {
       console.error('Failed to fetch tasks:', error);

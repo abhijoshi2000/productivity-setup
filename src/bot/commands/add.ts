@@ -1,7 +1,7 @@
 import { Context } from 'telegraf';
-import { quickAddTask, addTaskWithDue, completeTask, rescheduleTask, updateTaskPriority, getCachedProjects } from '../../services/todoist';
+import { quickAddTask, addTaskWithDue, completeTask, rescheduleTask, updateTaskPriority, getTask, getCachedProjects } from '../../services/todoist';
 import { priorityEmoji, formatDueDate } from '../../services/parser';
-import { getTaskListMessageId, getTaskByIndex, getTaskByFuzzyMatch } from '../../services/session';
+import { getTaskListMessageId, getTaskByIndex, getTaskByFuzzyMatch, pushUndoAction } from '../../services/session';
 
 export function registerAddCommand(bot: any) {
   bot.command('add', async (ctx: Context) => {
@@ -56,6 +56,20 @@ async function handleTaskAction(ctx: Context, chatId: number, text: string) {
         await ctx.reply(`❌ No task #${idx} found.`);
         return;
       }
+      try {
+        const task = await getTask(match.taskId);
+        pushUndoAction(chatId, {
+          type: 'complete',
+          taskId: match.taskId,
+          taskContent: match.content,
+          previousState: {
+            dueString: task.due?.string ?? undefined,
+            dueDate: task.due?.date ?? undefined,
+            dueDatetime: task.due?.datetime ?? undefined,
+          },
+          timestamp: Date.now(),
+        });
+      } catch {}
       await completeTask(match.taskId);
       await ctx.reply(`✅ Done! Completed: *${match.content}*`, { parse_mode: 'Markdown' });
       return;
@@ -72,6 +86,16 @@ async function handleTaskAction(ctx: Context, chatId: number, text: string) {
         await ctx.reply(`❌ No task #${idx} found.`);
         return;
       }
+      try {
+        const task = await getTask(match.taskId);
+        pushUndoAction(chatId, {
+          type: 'priority',
+          taskId: match.taskId,
+          taskContent: match.content,
+          previousState: { priority: task.priority },
+          timestamp: Date.now(),
+        });
+      } catch {}
       await updateTaskPriority(match.taskId, apiPriority);
       const emoji = priorityEmoji(apiPriority);
       await ctx.reply(`${emoji} Priority updated: *${match.content}* → p${userPriority}`, {
@@ -90,6 +114,20 @@ async function handleTaskAction(ctx: Context, chatId: number, text: string) {
         await ctx.reply(`❌ No task #${idx} found.`);
         return;
       }
+      try {
+        const task = await getTask(match.taskId);
+        pushUndoAction(chatId, {
+          type: 'reschedule',
+          taskId: match.taskId,
+          taskContent: match.content,
+          previousState: {
+            dueString: task.due?.string ?? undefined,
+            dueDate: task.due?.date ?? undefined,
+            dueDatetime: task.due?.datetime ?? undefined,
+          },
+          timestamp: Date.now(),
+        });
+      } catch {}
       await rescheduleTask(match.taskId, dueString);
       await ctx.reply(`📅 Rescheduled: *${match.content}* → _${dueString}_`, {
         parse_mode: 'Markdown',
@@ -100,6 +138,20 @@ async function handleTaskAction(ctx: Context, chatId: number, text: string) {
     // Plain text → fuzzy match complete
     const match = getTaskByFuzzyMatch(chatId, trimmed);
     if (match) {
+      try {
+        const task = await getTask(match.taskId);
+        pushUndoAction(chatId, {
+          type: 'complete',
+          taskId: match.taskId,
+          taskContent: match.content,
+          previousState: {
+            dueString: task.due?.string ?? undefined,
+            dueDate: task.due?.date ?? undefined,
+            dueDatetime: task.due?.datetime ?? undefined,
+          },
+          timestamp: Date.now(),
+        });
+      } catch {}
       await completeTask(match.taskId);
       await ctx.reply(`✅ Done! Completed: *${match.content}*`, { parse_mode: 'Markdown' });
       return;

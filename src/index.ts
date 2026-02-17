@@ -3,6 +3,7 @@ import cron from 'node-cron';
 import { config, isCalendarConfigured } from './config';
 import { createBot } from './bot';
 import { generateBriefing } from './bot/commands/briefing';
+import { generateEvening } from './bot/commands/evening';
 import { getUpcomingEvents } from './services/calendar';
 import { formatTime } from './services/parser';
 
@@ -45,6 +46,20 @@ async function main() {
       console.log('✅ Daily briefing sent');
     } catch (error) {
       console.error('❌ Failed to send daily briefing:', error);
+    }
+  }, { timezone: config.timezone });
+
+  // Evening wrap-up cron job
+  cron.schedule(config.eveningCron, async () => {
+    console.log('⏰ Running evening wrap-up cron...');
+    try {
+      const text = await generateEvening();
+      await bot.telegram.sendMessage(config.telegram.allowedUserId, text, {
+        parse_mode: 'Markdown',
+      });
+      console.log('✅ Evening wrap-up sent');
+    } catch (error) {
+      console.error('❌ Failed to send evening wrap-up:', error);
     }
   }, { timezone: config.timezone });
 

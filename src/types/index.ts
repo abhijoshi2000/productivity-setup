@@ -15,6 +15,8 @@ export interface SessionData {
   lastCommand: string;
   chatId: number;
   lastTaskListMessageId?: number;
+  undoStack?: UndoAction[];
+  focusTimer?: FocusTimer;
 }
 
 export interface CalendarEvent {
@@ -65,4 +67,28 @@ export interface ProjectInfo {
   color: string;
   taskCount: number;
   isFavorite: boolean;
+}
+
+// Feature 5: Undo
+export type UndoActionType = 'complete' | 'reschedule' | 'priority';
+export interface UndoAction {
+  type: UndoActionType;
+  taskId: string;
+  taskContent: string;
+  previousState: {
+    dueString?: string;
+    dueDate?: string;
+    dueDatetime?: string;
+    priority?: number;
+  };
+  timestamp: number;
+}
+
+// Feature 8: Focus Timer
+export interface FocusTimer {
+  taskDescription: string;
+  durationMinutes: number;
+  startedAt: number;
+  endsAt: number;
+  timeoutRef: ReturnType<typeof setTimeout>;
 }
