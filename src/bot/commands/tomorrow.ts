@@ -2,7 +2,7 @@ import { Context } from 'telegraf';
 import { getTomorrowTasks } from '../../services/todoist';
 import { getTomorrowEvents } from '../../services/calendar';
 import { isCalendarConfigured, config } from '../../config';
-import { priorityEmoji, formatTime, formatDueDate, separateAndMergeBusy, formatMeetingBlocks } from '../../services/parser';
+import { priorityEmoji, formatTime, formatDueDate, separateAndMergeBusy, formatMeetingBlocks, separateBirthdays, formatBirthdayLines } from '../../services/parser';
 
 export function registerTomorrowCommand(bot: any) {
   bot.command('tomorrow', async (ctx: Context) => {
@@ -25,9 +25,12 @@ export function registerTomorrowCommand(bot: any) {
       lines.push(`📅 *${dateStr}*`);
       lines.push('');
 
-      // Calendar events
-      if (events.length > 0) {
-        const { namedEvents, meetingBlocks } = separateAndMergeBusy(events);
+      // Birthdays & Calendar events
+      const { birthdays, otherEvents } = separateBirthdays(events);
+      lines.push(...formatBirthdayLines(birthdays));
+
+      if (otherEvents.length > 0) {
+        const { namedEvents, meetingBlocks } = separateAndMergeBusy(otherEvents);
         lines.push('🗓 *Schedule*');
         const meetingLine = formatMeetingBlocks(meetingBlocks);
         if (meetingLine) lines.push(`${meetingLine}`);
@@ -39,7 +42,7 @@ export function registerTomorrowCommand(bot: any) {
           }
         }
         lines.push('');
-      } else if (isCalendarConfigured()) {
+      } else if (isCalendarConfigured() && birthdays.length === 0) {
         lines.push('🗓 *Schedule*');
         lines.push('No events tomorrow');
         lines.push('');

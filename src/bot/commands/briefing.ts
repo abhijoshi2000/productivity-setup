@@ -11,6 +11,8 @@ import {
   timeUntil,
   separateAndMergeBusy,
   formatMeetingBlocks,
+  separateBirthdays,
+  formatBirthdayLines,
 } from '../../services/parser';
 
 // Generate briefing text (reusable by cron and command)
@@ -35,9 +37,12 @@ export async function generateBriefing(): Promise<string> {
   lines.push(`📅 ${dateStr}`);
   lines.push('');
 
-  // Schedule
-  if (events.length > 0) {
-    const { namedEvents, meetingBlocks } = separateAndMergeBusy(events);
+  // Birthdays & Schedule
+  const { birthdays, otherEvents } = separateBirthdays(events);
+  lines.push(...formatBirthdayLines(birthdays));
+
+  if (otherEvents.length > 0) {
+    const { namedEvents, meetingBlocks } = separateAndMergeBusy(otherEvents);
     lines.push('🗓 *Schedule*');
     const meetingLine = formatMeetingBlocks(meetingBlocks);
     if (meetingLine) lines.push(`${meetingLine}`);

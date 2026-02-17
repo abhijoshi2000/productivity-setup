@@ -1,6 +1,34 @@
 import { CalendarEvent, MeetingBlock } from '../types';
 import { config } from '../config';
 
+export function isBirthdayEvent(event: CalendarEvent): boolean {
+  return /birthday/i.test(event.summary);
+}
+
+export function separateBirthdays(events: CalendarEvent[]): { birthdays: CalendarEvent[]; otherEvents: CalendarEvent[] } {
+  const birthdays: CalendarEvent[] = [];
+  const otherEvents: CalendarEvent[] = [];
+  for (const event of events) {
+    if (isBirthdayEvent(event)) {
+      birthdays.push(event);
+    } else {
+      otherEvents.push(event);
+    }
+  }
+  return { birthdays, otherEvents };
+}
+
+export function formatBirthdayLines(birthdays: CalendarEvent[]): string[] {
+  if (birthdays.length === 0) return [];
+  const lines: string[] = [];
+  lines.push('🎂 *Birthdays*');
+  for (const b of birthdays) {
+    lines.push(`🎂 ${b.summary}`);
+  }
+  lines.push('');
+  return lines;
+}
+
 export function separateAndMergeBusy(events: CalendarEvent[]): { namedEvents: CalendarEvent[]; meetingBlocks: MeetingBlock[] } {
   const namedEvents: CalendarEvent[] = [];
   const busyTimed: CalendarEvent[] = [];

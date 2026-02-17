@@ -2,7 +2,7 @@ import { Context } from 'telegraf';
 import { getTodayTasks, getOverdueTasks } from '../../services/todoist';
 import { getTodayEvents } from '../../services/calendar';
 import { isCalendarConfigured, config } from '../../config';
-import { priorityEmoji, formatTime, formatDueDate, timeUntil, separateAndMergeBusy, formatMeetingBlocks } from '../../services/parser';
+import { priorityEmoji, formatTime, formatDueDate, timeUntil, separateAndMergeBusy, formatMeetingBlocks, separateBirthdays, formatBirthdayLines } from '../../services/parser';
 import { setTaskMappings, setTaskListMessageId } from '../../services/session';
 import { buildTaskKeyboard } from '../actions';
 
@@ -30,9 +30,12 @@ export function registerTodayCommand(bot: any) {
       lines.push(`📅 *${dateStr}*`);
       lines.push('');
 
-      // Calendar events
-      if (events.length > 0) {
-        const { namedEvents, meetingBlocks } = separateAndMergeBusy(events);
+      // Birthdays & Calendar events
+      const { birthdays, otherEvents } = separateBirthdays(events);
+      lines.push(...formatBirthdayLines(birthdays));
+
+      if (otherEvents.length > 0) {
+        const { namedEvents, meetingBlocks } = separateAndMergeBusy(otherEvents);
         lines.push('🗓 *Schedule*');
         const meetingLine = formatMeetingBlocks(meetingBlocks);
         if (meetingLine) lines.push(`${meetingLine}`);
@@ -46,7 +49,7 @@ export function registerTodayCommand(bot: any) {
           }
         }
         lines.push('');
-      } else if (isCalendarConfigured()) {
+      } else if (isCalendarConfigured() && birthdays.length === 0) {
         lines.push('🗓 *Schedule*');
         lines.push('No events today');
         lines.push('');
