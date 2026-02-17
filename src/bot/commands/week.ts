@@ -1,12 +1,12 @@
 import { Context } from 'telegraf';
 import { getWeekTasks } from '../../services/todoist';
-import { getWeekEvents } from '../../services/calendar';
+import { getWeekEvents, startOfDayInTz } from '../../services/calendar';
 import { isCalendarConfigured, config } from '../../config';
 import { priorityEmoji, formatTime, formatDate, separateAndMergeBusy, formatMeetingBlocks, separateBirthdays } from '../../services/parser';
 import { CalendarEvent, FormattedTask } from '../../types';
 
 function dateKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  return date.toLocaleDateString('en-CA', { timeZone: config.timezone });
 }
 
 export function registerWeekCommand(bot: any) {
@@ -17,13 +17,10 @@ export function registerWeekCommand(bot: any) {
         getWeekTasks(),
       ]);
 
-      const now = new Date();
-      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-      // Build 7-day date list
+      // Build 7-day date list using configured timezone
       const days: Date[] = [];
       for (let i = 0; i < 7; i++) {
-        days.push(new Date(startOfToday.getTime() + i * 24 * 60 * 60 * 1000));
+        days.push(startOfDayInTz(i));
       }
 
       // Group events by date
@@ -38,7 +35,7 @@ export function registerWeekCommand(bot: any) {
       // Group tasks by due date
       const tasksByDate = new Map<string, FormattedTask[]>();
       for (const task of tasks) {
-        const key = (task.due?.date ?? dateKey(now)).substring(0, 10);
+        const key = (task.due?.date ?? dateKey(startOfDayInTz(0))).substring(0, 10);
         const list = tasksByDate.get(key) ?? [];
         list.push(task);
         tasksByDate.set(key, list);
