@@ -2,6 +2,17 @@ import { google } from 'googleapis';
 import { config, isCalendarConfigured } from '../config';
 import { CalendarEvent } from '../types';
 
+/** Return a Date representing midnight N days from today in the configured timezone. */
+function startOfDayInTz(offsetDays = 0): Date {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-CA', { timeZone: config.timezone });
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const midnightUTC = new Date(Date.UTC(year, month - 1, day + offsetDays));
+  const utcRepr = new Date(midnightUTC.toLocaleString('en-US', { timeZone: 'UTC' }));
+  const tzRepr = new Date(midnightUTC.toLocaleString('en-US', { timeZone: config.timezone }));
+  return new Date(midnightUTC.getTime() + (utcRepr.getTime() - tzRepr.getTime()));
+}
+
 function getCalendarClient() {
   const auth = new google.auth.JWT({
     email: config.google.serviceAccountEmail,
@@ -85,24 +96,15 @@ async function getEventsForDateRange(start: Date, end: Date): Promise<CalendarEv
 }
 
 export async function getTodayEvents(): Promise<CalendarEvent[]> {
-  const now = new Date();
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
-  return getEventsForDateRange(startOfDay, endOfDay);
+  return getEventsForDateRange(startOfDayInTz(0), startOfDayInTz(1));
 }
 
 export async function getTomorrowEvents(): Promise<CalendarEvent[]> {
-  const now = new Date();
-  const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-  const endOfTomorrow = new Date(startOfTomorrow.getTime() + 24 * 60 * 60 * 1000);
-  return getEventsForDateRange(startOfTomorrow, endOfTomorrow);
+  return getEventsForDateRange(startOfDayInTz(1), startOfDayInTz(2));
 }
 
 export async function getWeekEvents(): Promise<CalendarEvent[]> {
-  const now = new Date();
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const endOfWeek = new Date(startOfDay.getTime() + 7 * 24 * 60 * 60 * 1000);
-  return getEventsForDateRange(startOfDay, endOfWeek);
+  return getEventsForDateRange(startOfDayInTz(0), startOfDayInTz(7));
 }
 
 export async function getUpcomingEvents(withinMinutes: number): Promise<CalendarEvent[]> {
