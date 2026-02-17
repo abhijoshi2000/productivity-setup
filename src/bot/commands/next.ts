@@ -21,13 +21,13 @@ export function registerNextCommand(bot: any) {
         const event = events[0];
         const time = formatTime(event.start);
         const until = timeUntil(event.start);
-        const location = event.location ? `\n  📍 ${event.location}` : '';
+        const location = event.location ? `\n📍 ${event.location}` : '';
         lines.push(`🗓 *Next Event*`);
         const summary = event.summary === 'Busy' ? 'Meeting' : event.summary;
-        lines.push(`  ${time} — ${summary} _(${until})_${location}`);
+        lines.push(`${time} — ${summary} _(${until})_${location}`);
       } else if (isCalendarConfigured()) {
         lines.push('🗓 *Next Event*');
-        lines.push('  No upcoming events in the next 8 hours');
+        lines.push('No upcoming events in the next 8 hours');
       }
 
       // Next task (highest priority first)
@@ -38,11 +38,11 @@ export function registerNextCommand(bot: any) {
         const project = task.projectName ? ` · ${task.projectName}` : '';
         lines.push('');
         lines.push('✅ *Next Task*');
-        lines.push(`  ${emoji} ${task.content}${project}`);
+        lines.push(`${emoji} ${task.content}${project}`);
       } else {
         lines.push('');
         lines.push('✅ *Next Task*');
-        lines.push('  All tasks done! 🎉');
+        lines.push('All tasks done! 🎉');
       }
 
       await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown' });

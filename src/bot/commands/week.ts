@@ -66,22 +66,22 @@ export function registerWeekCommand(bot: any) {
         lines.push(`━━━ *${dayLabel}* ━━━`);
 
         if (dayEvents.length === 0 && dayTasks.length === 0) {
-          lines.push('  No events or tasks');
+          lines.push('No events or tasks');
         } else {
           const { namedEvents: dayNamed, meetingBlocks: dayMeetings } = separateAndMergeBusy(dayEvents);
           const meetingLine = formatMeetingBlocks(dayMeetings);
-          if (meetingLine) lines.push(`  ${meetingLine}`);
+          if (meetingLine) lines.push(`${meetingLine}`);
           for (const event of dayNamed) {
             if (event.isAllDay) {
-              lines.push(`  📌 ${event.summary} _(all day)_`);
+              lines.push(`📌 ${event.summary} _(all day)_`);
             } else {
-              lines.push(`  🕐 ${formatTime(event.start)} — ${event.summary}`);
+              lines.push(`🕐 ${formatTime(event.start)} — ${event.summary}`);
             }
           }
           for (const task of dayTasks) {
             const emoji = priorityEmoji(task.priority);
             const project = task.projectName ? ` · ${task.projectName}` : '';
-            lines.push(`  ${emoji} ${task.content}${project}`);
+            lines.push(`${emoji} ${task.content}${project}`);
           }
         }
 

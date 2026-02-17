@@ -34,20 +34,20 @@ export function registerTodayCommand(bot: any) {
         const { namedEvents, meetingBlocks } = separateAndMergeBusy(events);
         lines.push('🗓 *Schedule*');
         const meetingLine = formatMeetingBlocks(meetingBlocks);
-        if (meetingLine) lines.push(`  ${meetingLine}`);
+        if (meetingLine) lines.push(`${meetingLine}`);
         for (const event of namedEvents) {
           if (event.isAllDay) {
-            lines.push(`  📌 ${event.summary} _(all day)_`);
+            lines.push(`📌 ${event.summary} _(all day)_`);
           } else {
             const time = formatTime(event.start);
             const until = event.start > now ? ` — ${timeUntil(event.start)}` : '';
-            lines.push(`  🕐 ${time} — ${event.summary}${until}`);
+            lines.push(`🕐 ${time} — ${event.summary}${until}`);
           }
         }
         lines.push('');
       } else if (isCalendarConfigured()) {
         lines.push('🗓 *Schedule*');
-        lines.push('  No events today');
+        lines.push('No events today');
         lines.push('');
       }
 
@@ -57,7 +57,7 @@ export function registerTodayCommand(bot: any) {
         for (const task of overdueTasks) {
           const emoji = priorityEmoji(task.priority);
           const due = task.due ? ` _(${formatDueDate(task.due)})_` : '';
-          lines.push(`  ${emoji} ${task.content}${due}`);
+          lines.push(`${emoji} ${task.content}${due}`);
         }
         lines.push('');
       }
@@ -73,11 +73,11 @@ export function registerTodayCommand(bot: any) {
           const emoji = priorityEmoji(task.priority);
           const due = task.due?.datetime ? ` _(${formatDueDate(task.due)})_` : '';
           const project = task.projectName ? ` · ${task.projectName}` : '';
-          lines.push(`  ${idx}. ${emoji} ${task.content}${due}${project}`);
+          lines.push(`${idx}. ${emoji} ${task.content}${due}${project}`);
         });
       } else {
         lines.push('✅ *Today\'s Tasks*');
-        lines.push('  All clear! 🎉');
+        lines.push('All clear! 🎉');
       }
 
       const total = allTasks.length;

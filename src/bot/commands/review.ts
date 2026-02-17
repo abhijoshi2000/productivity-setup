@@ -29,10 +29,10 @@ export function registerReviewCommand(bot: any) {
         for (const task of overdueTasks.slice(0, 5)) {
           const emoji = priorityEmoji(task.priority);
           const due = task.due ? ` _(${formatDueDate(task.due)})_` : '';
-          lines.push(`  ${emoji} ${task.content}${due}`);
+          lines.push(`${emoji} ${task.content}${due}`);
         }
         if (overdueTasks.length > 5) {
-          lines.push(`  _...and ${overdueTasks.length - 5} more_`);
+          lines.push(`_...and ${overdueTasks.length - 5} more_`);
         }
         lines.push('');
       }
@@ -43,10 +43,10 @@ export function registerReviewCommand(bot: any) {
         for (const task of weekTasks.slice(0, 5)) {
           const emoji = priorityEmoji(task.priority);
           const due = task.due ? ` 📅 ${formatDueDate(task.due)}` : '';
-          lines.push(`  ${emoji} ${task.content}${due}`);
+          lines.push(`${emoji} ${task.content}${due}`);
         }
         if (weekTasks.length > 5) {
-          lines.push(`  _...and ${weekTasks.length - 5} more_`);
+          lines.push(`_...and ${weekTasks.length - 5} more_`);
         }
         lines.push('');
       }
@@ -54,12 +54,12 @@ export function registerReviewCommand(bot: any) {
       // Weekly stats
       lines.push('📈 *Stats*');
       const weekBar = progressBar(stats.completedThisWeek, stats.weeklyGoal);
-      lines.push(`  Weekly: ${weekBar} ${stats.completedThisWeek}/${stats.weeklyGoal}`);
+      lines.push(`Weekly: ${weekBar} ${stats.completedThisWeek}/${stats.weeklyGoal}`);
       const dailyBar = progressBar(stats.completedToday, stats.dailyGoal);
-      lines.push(`  Today:  ${dailyBar} ${stats.completedToday}/${stats.dailyGoal}`);
+      lines.push(`Today:  ${dailyBar} ${stats.completedToday}/${stats.dailyGoal}`);
       const streak = streakEmoji(stats.currentDailyStreak);
-      lines.push(`  Streak: ${stats.currentDailyStreak} day${stats.currentDailyStreak !== 1 ? 's' : ''} ${streak}`);
-      lines.push(`  Karma:  ${stats.karma} ${trendEmoji(stats.karmaTrend)}`);
+      lines.push(`Streak: ${stats.currentDailyStreak} day${stats.currentDailyStreak !== 1 ? 's' : ''} ${streak}`);
+      lines.push(`Karma:  ${stats.karma} ${trendEmoji(stats.karmaTrend)}`);
 
       // Week events count
       if (isCalendarConfigured()) {

@@ -30,18 +30,18 @@ export function registerTomorrowCommand(bot: any) {
         const { namedEvents, meetingBlocks } = separateAndMergeBusy(events);
         lines.push('🗓 *Schedule*');
         const meetingLine = formatMeetingBlocks(meetingBlocks);
-        if (meetingLine) lines.push(`  ${meetingLine}`);
+        if (meetingLine) lines.push(`${meetingLine}`);
         for (const event of namedEvents) {
           if (event.isAllDay) {
-            lines.push(`  📌 ${event.summary} _(all day)_`);
+            lines.push(`📌 ${event.summary} _(all day)_`);
           } else {
-            lines.push(`  🕐 ${formatTime(event.start)} — ${event.summary}`);
+            lines.push(`🕐 ${formatTime(event.start)} — ${event.summary}`);
           }
         }
         lines.push('');
       } else if (isCalendarConfigured()) {
         lines.push('🗓 *Schedule*');
-        lines.push('  No events tomorrow');
+        lines.push('No events tomorrow');
         lines.push('');
       }
 
@@ -52,11 +52,11 @@ export function registerTomorrowCommand(bot: any) {
           const emoji = priorityEmoji(task.priority);
           const due = task.due?.datetime ? ` _(${formatDueDate(task.due)})_` : '';
           const project = task.projectName ? ` · ${task.projectName}` : '';
-          lines.push(`  ${emoji} ${task.content}${due}${project}`);
+          lines.push(`${emoji} ${task.content}${due}${project}`);
         }
       } else {
         lines.push('✅ *Tasks*');
-        lines.push('  Nothing scheduled — enjoy! 🎉');
+        lines.push('Nothing scheduled — enjoy! 🎉');
       }
 
       lines.push('');

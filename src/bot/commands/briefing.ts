@@ -40,14 +40,14 @@ export async function generateBriefing(): Promise<string> {
     const { namedEvents, meetingBlocks } = separateAndMergeBusy(events);
     lines.push('🗓 *Schedule*');
     const meetingLine = formatMeetingBlocks(meetingBlocks);
-    if (meetingLine) lines.push(`  ${meetingLine}`);
+    if (meetingLine) lines.push(`${meetingLine}`);
     for (const event of namedEvents) {
       if (event.isAllDay) {
-        lines.push(`  📌 ${event.summary} _(all day)_`);
+        lines.push(`📌 ${event.summary} _(all day)_`);
       } else {
         const time = formatTime(event.start);
         const until = event.start > now ? ` — ${timeUntil(event.start)}` : '';
-        lines.push(`  🕐 ${time} — ${event.summary}${until}`);
+        lines.push(`🕐 ${time} — ${event.summary}${until}`);
       }
     }
     lines.push('');
@@ -57,10 +57,10 @@ export async function generateBriefing(): Promise<string> {
   if (overdueTasks.length > 0) {
     lines.push(`⚠️ *Overdue (${overdueTasks.length})*`);
     for (const task of overdueTasks.slice(0, 5)) {
-      lines.push(`  ${priorityEmoji(task.priority)} ${task.content}`);
+      lines.push(`${priorityEmoji(task.priority)} ${task.content}`);
     }
     if (overdueTasks.length > 5) {
-      lines.push(`  _... and ${overdueTasks.length - 5} more_`);
+      lines.push(`_... and ${overdueTasks.length - 5} more_`);
     }
     lines.push('');
   }
@@ -71,10 +71,10 @@ export async function generateBriefing(): Promise<string> {
     for (const task of todayTasks) {
       const emoji = priorityEmoji(task.priority);
       const due = task.due?.datetime ? ` _(${formatDueDate(task.due)})_` : '';
-      lines.push(`  ${emoji} ${task.content}${due}`);
+      lines.push(`${emoji} ${task.content}${due}`);
     }
   } else {
-    lines.push('  No tasks scheduled — enjoy your day! 🎉');
+    lines.push('No tasks scheduled — enjoy your day! 🎉');
   }
   lines.push('');
 
@@ -82,9 +82,9 @@ export async function generateBriefing(): Promise<string> {
   const dailyBar = progressBar(stats.completedToday, stats.dailyGoal, 8);
   const streak = streakEmoji(stats.currentDailyStreak);
   lines.push('📊 *Quick Stats*');
-  lines.push(`  ${dailyBar} ${stats.completedToday}/${stats.dailyGoal} today`);
+  lines.push(`${dailyBar} ${stats.completedToday}/${stats.dailyGoal} today`);
   if (stats.currentDailyStreak > 0) {
-    lines.push(`  🔥 ${stats.currentDailyStreak} day streak ${streak}`);
+    lines.push(`🔥 ${stats.currentDailyStreak} day streak ${streak}`);
   }
 
   return lines.join('\n');

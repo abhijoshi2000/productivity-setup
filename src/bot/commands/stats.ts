@@ -17,21 +17,21 @@ export function registerStatsCommand(bot: any) {
       lines.push('');
 
       lines.push('*Today*');
-      lines.push(`  ${dailyBar} ${stats.completedToday}/${stats.dailyGoal} tasks`);
+      lines.push(`${dailyBar} ${stats.completedToday}/${stats.dailyGoal} tasks`);
       lines.push('');
 
       lines.push('*This Week*');
-      lines.push(`  ${weeklyBar} ${stats.completedThisWeek}/${stats.weeklyGoal} tasks`);
+      lines.push(`${weeklyBar} ${stats.completedThisWeek}/${stats.weeklyGoal} tasks`);
       lines.push('');
 
       lines.push('*Streaks*');
-      lines.push(`  🔥 Daily: ${stats.currentDailyStreak} days ${streak}`);
-      lines.push(`  📅 Weekly: ${stats.currentWeeklyStreak} weeks`);
-      lines.push(`  🏆 Best daily: ${stats.maxDailyStreak} days`);
+      lines.push(`🔥 Daily: ${stats.currentDailyStreak} days ${streak}`);
+      lines.push(`📅 Weekly: ${stats.currentWeeklyStreak} weeks`);
+      lines.push(`🏆 Best daily: ${stats.maxDailyStreak} days`);
       lines.push('');
 
       lines.push('*Karma*');
-      lines.push(`  ${trend} ${stats.karma.toLocaleString()} points (${stats.karmaTrend})`);
+      lines.push(`${trend} ${stats.karma.toLocaleString()} points (${stats.karmaTrend})`);
 
       await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown' });
     } catch (error) {
