@@ -40,7 +40,13 @@ async function getEventsForCalendar(
 
   const events = response.data.items ?? [];
 
-  return events.map((event) => {
+  // Filter out events where the user's response is "tentative"
+  const confirmed = events.filter((event) => {
+    const self = event.attendees?.find((a) => a.self);
+    return !self || self.responseStatus !== 'tentative';
+  });
+
+  return confirmed.map((event) => {
     const isAllDay = !event.start?.dateTime;
     const start = new Date(event.start?.dateTime ?? event.start?.date ?? '');
     const end = new Date(event.end?.dateTime ?? event.end?.date ?? '');
