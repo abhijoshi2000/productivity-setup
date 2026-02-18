@@ -3,6 +3,7 @@ import cron from 'node-cron';
 import { config, isCalendarConfigured } from './config';
 import { createBot } from './bot';
 import { generateBriefing } from './bot/commands/briefing';
+import { generateTimelineBuffer } from './bot/commands/timeline';
 import { generateEvening } from './bot/commands/evening';
 import { getUpcomingEvents } from './services/calendar';
 import { formatTime } from './services/parser';
@@ -39,9 +40,16 @@ async function main() {
   cron.schedule(config.briefingCron, async () => {
     console.log('⏰ Running daily briefing cron...');
     try {
-      const text = await generateBriefing();
+      const [text, timelineBuffer] = await Promise.all([
+        generateBriefing(),
+        generateTimelineBuffer(),
+      ]);
       await bot.telegram.sendMessage(config.telegram.allowedUserId, text, {
         parse_mode: 'Markdown',
+      });
+      await bot.telegram.sendPhoto(config.telegram.allowedUserId, {
+        source: timelineBuffer,
+        filename: 'timeline.png',
       });
       console.log('✅ Daily briefing sent');
     } catch (error) {

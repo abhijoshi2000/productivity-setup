@@ -3,6 +3,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
+RUN apk add --no-cache build-base g++ cairo-dev jpeg-dev pango-dev giflib-dev
 RUN npm ci
 
 COPY tsconfig.json ./
@@ -15,6 +16,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 COPY package*.json ./
+RUN apk add --no-cache cairo jpeg pango giflib
 RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist

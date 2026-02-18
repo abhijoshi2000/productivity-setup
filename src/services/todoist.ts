@@ -43,6 +43,8 @@ export async function getTasksByFilter(filter: string): Promise<FormattedTask[]>
           string: task.due.string ?? undefined,
         }
       : undefined,
+    duration: task.duration?.amount,
+    durationUnit: task.duration?.unit as 'minute' | 'day' | undefined,
     projectId: task.projectId,
     labels: task.labels,
     projectName: projectMap.get(task.projectId) ?? 'Unknown',

@@ -44,6 +44,8 @@ export interface FormattedTask {
     isRecurring: boolean;
     string?: string;
   };
+  duration?: number;
+  durationUnit?: 'minute' | 'day';
   projectId: string;
   labels: string[];
   projectName?: string;

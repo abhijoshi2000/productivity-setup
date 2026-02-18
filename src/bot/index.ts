@@ -22,6 +22,7 @@ import { registerFreeCommand } from './commands/free';
 import { registerBlockCommand } from './commands/block';
 import { registerFocusCommand } from './commands/focus';
 import { registerWeekRecapCommand } from './commands/week-recap';
+import { registerTimelineCommand } from './commands/timeline';
 
 export function createBot(): Telegraf {
   const bot = new Telegraf(config.telegram.botToken);
@@ -52,6 +53,7 @@ export function createBot(): Telegraf {
   registerBlockCommand(bot);
   registerFocusCommand(bot);
   registerWeekRecapCommand(bot);
+  registerTimelineCommand(bot);
 
   // Add command + plain-text handler registered last
   registerAddCommand(bot);
