@@ -84,6 +84,14 @@ export interface UndoAction {
   timestamp: number;
 }
 
+// Completed task (for week recap)
+export interface CompletedTask {
+  content: string;
+  projectName: string;
+  completedAt: string; // ISO datetime
+  priority: number;
+}
+
 // Feature 8: Focus Timer
 export interface FocusTimer {
   taskDescription: string;

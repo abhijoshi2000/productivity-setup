@@ -1,6 +1,6 @@
 import { TodoistApi } from '@doist/todoist-api-typescript';
 import { config } from '../config';
-import { FormattedTask, DailyStats, ProjectInfo } from '../types';
+import { FormattedTask, DailyStats, ProjectInfo, CompletedTask } from '../types';
 
 const api = new TodoistApi(config.todoist.apiToken);
 
@@ -98,6 +98,39 @@ export async function updateTaskPriority(taskId: string, priority: number): Prom
 export async function getCompletedThisWeek(): Promise<number> {
   const stats = await api.getProductivityStats();
   return stats.weekItems?.[0]?.totalCompleted ?? 0;
+}
+
+// Get completed tasks for the past 7 days (with full task details)
+export async function getCompletedTasksThisWeek(): Promise<CompletedTask[]> {
+  const { startOfDayInTz } = await import('./calendar');
+  const since = startOfDayInTz(-6).toISOString();
+  const until = new Date().toISOString();
+  const projects = await getCachedProjects();
+  const projectMap = new Map(projects.map((p) => [p.id, p.name]));
+
+  const allTasks: CompletedTask[] = [];
+  let cursor: string | null = null;
+
+  do {
+    const response = await api.getCompletedTasksByCompletionDate({
+      since,
+      until,
+      ...(cursor && { cursor }),
+    });
+
+    for (const task of response.items) {
+      allTasks.push({
+        content: task.content,
+        projectName: projectMap.get(task.projectId) ?? 'Unknown',
+        completedAt: task.completedAt ?? '',
+        priority: task.priority,
+      });
+    }
+
+    cursor = response.nextCursor;
+  } while (cursor);
+
+  return allTasks;
 }
 
 // Project caching (refreshed every 5 minutes)

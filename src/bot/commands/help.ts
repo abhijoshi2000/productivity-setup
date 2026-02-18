@@ -21,7 +21,7 @@ _Batch: /done 1 3 5 · /reschedule 1-4 tomorrow_
 /focus — Pomodoro timer · /focus stop
 
 📊 *Insights*
-/stats · /projects · /review
+/stats · /projects · /review · /week\_recap
 
 💡 *Tips*
 • Tap ✅/📅 buttons or reply to task lists
