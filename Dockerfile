@@ -18,7 +18,7 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache cairo jpeg pango giflib pixman
+RUN apk add --no-cache cairo jpeg pango giflib pixman fontconfig ttf-freefont font-noto-emoji
 
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules ./node_modules

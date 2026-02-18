@@ -266,11 +266,23 @@ export async function generateTimelineImage(
       ctx.fillStyle = ALL_DAY_BG;
       roundRect(ctx, LEFT_GUTTER, y, TIMELINE_WIDTH, ROW_HEIGHT - 4, BLOCK_RADIUS);
       ctx.fill();
+      // Draw pin indicator (small filled diamond)
       ctx.fillStyle = ALL_DAY_TEXT;
+      const pinX = LEFT_GUTTER + 14;
+      const pinY = y + 15;
+      const pinSize = 5;
+      ctx.beginPath();
+      ctx.moveTo(pinX, pinY - pinSize);
+      ctx.lineTo(pinX + pinSize, pinY);
+      ctx.lineTo(pinX, pinY + pinSize);
+      ctx.lineTo(pinX - pinSize, pinY);
+      ctx.closePath();
+      ctx.fill();
+
       ctx.font = '14px sans-serif';
       ctx.textAlign = 'left';
-      const text = truncateText(ctx, `📌 ${event.summary}`, TIMELINE_WIDTH - 16);
-      ctx.fillText(text, LEFT_GUTTER + 8, y + 20);
+      const text = truncateText(ctx, event.summary, TIMELINE_WIDTH - 32);
+      ctx.fillText(text, LEFT_GUTTER + 24, y + 20);
     });
   }
 
