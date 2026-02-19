@@ -1,4 +1,4 @@
-import { CalendarEvent, MeetingBlock } from '../types';
+import { CalendarEvent, MeetingBlock, FormattedTask } from '../types';
 import { config } from '../config';
 
 export function isBirthdayEvent(event: CalendarEvent): boolean {
@@ -216,4 +216,34 @@ export function parseTimeBlock(input: string): { startTime: string; durationMin?
   }
 
   return null;
+}
+
+// Get a sort key for a task based on its start time (minutes from midnight).
+// Tasks with datetime get exact time, tasks with time in due.string get parsed time,
+// unscheduled tasks sort to end (Infinity).
+function taskSortKey(task: FormattedTask): number {
+  if (task.due?.datetime) {
+    const dt = new Date(task.due.datetime);
+    const str = dt.toLocaleString('en-US', { timeZone: config.timezone });
+    const local = new Date(str);
+    return local.getHours() * 60 + local.getMinutes();
+  }
+  if (task.due?.string) {
+    const m = task.due.string.match(/(\d{1,2}):(\d{2})\s*(am|pm)?/i)
+      ?? task.due.string.match(/(\d{1,2})\s*(am|pm)/i);
+    if (m) {
+      let hours = parseInt(m[1], 10);
+      const minutes = m[2] && !m[2].match(/am|pm/i) ? parseInt(m[2], 10) : 0;
+      const ampm = (m[3] ?? m[2])?.toLowerCase();
+      if (ampm === 'pm' && hours < 12) hours += 12;
+      if (ampm === 'am' && hours === 12) hours = 0;
+      return hours * 60 + minutes;
+    }
+  }
+  return Infinity;
+}
+
+// Sort tasks chronologically by start time. Unscheduled tasks go to the end.
+export function sortTasksByTime(tasks: FormattedTask[]): FormattedTask[] {
+  return [...tasks].sort((a, b) => taskSortKey(a) - taskSortKey(b));
 }

@@ -264,14 +264,15 @@ export async function generateTimelineImage(
     });
   }
 
-  // Filter blocks to those visible in work hours (with clamping)
-  const visibleBlocks = timeBlocks
-    .filter((b) => b.endMin > workStartMin && b.startMin < workEndMin)
-    .map((b) => ({
-      ...b,
-      startMin: Math.max(b.startMin, workStartMin),
-      endMin: Math.min(b.endMin, workEndMin),
-    }));
+  // Compute visible range: expand beyond work hours to include all blocks
+  let gridStartMin = workStartMin;
+  let gridEndMin = workEndMin;
+  for (const b of timeBlocks) {
+    if (b.startMin < gridStartMin) gridStartMin = Math.floor(b.startMin / 60) * 60;
+    if (b.endMin > gridEndMin) gridEndMin = Math.ceil(b.endMin / 60) * 60;
+  }
+  const gridHours = (gridEndMin - gridStartMin) / 60;
+  const visibleBlocks = timeBlocks.filter((b) => b.endMin > gridStartMin && b.startMin < gridEndMin);
 
   // Calculate dynamic height
   let yOffset = HEADER_HEIGHT;
@@ -294,7 +295,7 @@ export async function generateTimelineImage(
 
   // Hour grid
   const gridTop = yOffset + SECTION_PAD;
-  const gridHeight = workHours * HOUR_HEIGHT;
+  const gridHeight = gridHours * HOUR_HEIGHT;
   yOffset = gridTop + gridHeight + SECTION_PAD;
 
   // Unscheduled section
@@ -381,9 +382,9 @@ export async function generateTimelineImage(
   // Hour grid lines and labels
   ctx.textAlign = 'right';
   ctx.font = '13px sans-serif';
-  for (let h = 0; h <= workHours; h++) {
-    const hourMin = workStartMin + h * 60;
-    const y = minutesToY(hourMin, workStartMin, gridTop);
+  for (let h = 0; h <= gridHours; h++) {
+    const hourMin = gridStartMin + h * 60;
+    const y = minutesToY(hourMin, gridStartMin, gridTop);
     // Grid line
     ctx.strokeStyle = GRID_LINE;
     ctx.lineWidth = 1;
@@ -405,7 +406,7 @@ export async function generateTimelineImage(
     for (const { block, col, totalCols } of packed) {
       const colWidth = (TIMELINE_WIDTH - BLOCK_PAD * 2) / totalCols;
       const x = LEFT_GUTTER + BLOCK_PAD + col * colWidth;
-      const y = minutesToY(block.startMin, workStartMin, gridTop);
+      const y = minutesToY(block.startMin, gridStartMin, gridTop);
       const h = Math.max(
         ((block.endMin - block.startMin) / 60) * HOUR_HEIGHT,
         24, // minimum height
@@ -454,8 +455,8 @@ export async function generateTimelineImage(
   // NOW line
   const now = nowInTimezone();
   const nowMin = now.getHours() * 60 + now.getMinutes();
-  if (nowMin >= workStartMin && nowMin <= workEndMin) {
-    const y = minutesToY(nowMin, workStartMin, gridTop);
+  if (nowMin >= gridStartMin && nowMin <= gridEndMin) {
+    const y = minutesToY(nowMin, gridStartMin, gridTop);
     ctx.strokeStyle = NOW_COLOR;
     ctx.lineWidth = 2;
     ctx.beginPath();
