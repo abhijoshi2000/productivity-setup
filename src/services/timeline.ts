@@ -185,19 +185,42 @@ export async function generateTimelineImage(
 
   // Separate timed vs unscheduled tasks
   const timedTasks: FormattedTask[] = [];
+  const dueStringTasks: { task: FormattedTask; startMin: number }[] = [];
   const unscheduledTasks: FormattedTask[] = [];
   for (const task of tasks) {
     if (task.due?.datetime) {
       timedTasks.push(task);
+    } else if (task.due?.string) {
+      const parsed = parseTimeFromDueString(task.due.string);
+      if (parsed !== undefined) {
+        dueStringTasks.push({ task, startMin: parsed });
+      } else {
+        unscheduledTasks.push(task);
+      }
     } else {
       unscheduledTasks.push(task);
     }
   }
 
-  // Build time blocks from timed tasks
+  // Build time blocks from timed tasks (explicit datetime)
   for (const task of timedTasks) {
     const dt = new Date(task.due!.datetime!);
     const startMin = toMinutesInTz(dt);
+    const durationMin =
+      task.duration && task.durationUnit === 'minute' ? task.duration : 30;
+    timeBlocks.push({
+      label: task.content,
+      startMin,
+      endMin: startMin + durationMin,
+      color: PRIORITY_COLORS[task.priority] ?? PRIORITY_COLORS[1],
+      textColor: '#ffffff',
+      type: 'task',
+      priority: task.priority,
+    });
+  }
+
+  // Build time blocks from tasks with time parsed from due.string
+  for (const { task, startMin } of dueStringTasks) {
     const durationMin =
       task.duration && task.durationUnit === 'minute' ? task.duration : 30;
     timeBlocks.push({
