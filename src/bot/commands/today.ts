@@ -2,7 +2,7 @@ import { Context } from 'telegraf';
 import { getTodayTasks, getOverdueTasks } from '../../services/todoist';
 import { getTodayEvents } from '../../services/calendar';
 import { isCalendarConfigured, config } from '../../config';
-import { priorityEmoji, formatTime, formatDueDate, formatTaskTimeRange, timeUntil, separateAndMergeBusy, formatMeetingBlocks, separateBirthdays, formatBirthdayLines, sortTasksByTime } from '../../services/parser';
+import { priorityEmoji, formatTime, formatDueDate, timeUntil, separateAndMergeBusy, formatMeetingBlocks, separateBirthdays, formatBirthdayLines, sortTasksByTime } from '../../services/parser';
 import { setTaskMappings, setTaskListMessageId } from '../../services/session';
 
 export function registerTodayCommand(bot: any) {
@@ -75,10 +75,9 @@ export function registerTodayCommand(bot: any) {
         sortedTodayTasks.forEach((task, i) => {
           const idx = overdueTasks.length + i + 1;
           const emoji = priorityEmoji(task.priority);
-          const timeRange = formatTaskTimeRange(task);
-          const time = timeRange ? ` _(${timeRange})_` : '';
+          const due = task.due ? ` 📅 ${formatDueDate(task.due)}` : '';
           const project = task.projectName ? ` · ${task.projectName}` : '';
-          lines.push(`${idx}. ${emoji} ${task.content}${time}${project}`);
+          lines.push(`${idx}. ${emoji} ${task.content}${due}${project}`);
         });
       } else {
         lines.push('✅ *Today\'s Tasks*');

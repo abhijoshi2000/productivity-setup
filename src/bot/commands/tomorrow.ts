@@ -2,7 +2,7 @@ import { Context } from 'telegraf';
 import { getTomorrowTasks } from '../../services/todoist';
 import { getTomorrowEvents } from '../../services/calendar';
 import { isCalendarConfigured, config } from '../../config';
-import { priorityEmoji, formatTime, formatDueDate, formatTaskTimeRange, separateAndMergeBusy, formatMeetingBlocks, separateBirthdays, formatBirthdayLines, sortTasksByTime } from '../../services/parser';
+import { priorityEmoji, formatTime, formatDueDate, separateAndMergeBusy, formatMeetingBlocks, separateBirthdays, formatBirthdayLines, sortTasksByTime } from '../../services/parser';
 
 export function registerTomorrowCommand(bot: any) {
   bot.command('tomorrow', async (ctx: Context) => {
@@ -54,10 +54,9 @@ export function registerTomorrowCommand(bot: any) {
         lines.push(`✅ *Tasks (${sortedTasks.length})*`);
         for (const task of sortedTasks) {
           const emoji = priorityEmoji(task.priority);
-          const timeRange = formatTaskTimeRange(task);
-          const time = timeRange ? ` _(${timeRange})_` : '';
+          const due = task.due ? ` 📅 ${formatDueDate(task.due)}` : '';
           const project = task.projectName ? ` · ${task.projectName}` : '';
-          lines.push(`${emoji} ${task.content}${time}${project}`);
+          lines.push(`${emoji} ${task.content}${due}${project}`);
         }
       } else {
         lines.push('✅ *Tasks*');
