@@ -1,7 +1,8 @@
 import { Context } from 'telegraf';
-import { quickAddTask, addTaskWithDue, completeTask, rescheduleTask, updateTaskPriority, getTask, getCachedProjects } from '../../services/todoist';
-import { priorityEmoji, formatDueDate } from '../../services/parser';
+import { quickAddTask, updateTaskDuration, completeTask, rescheduleTask, updateTaskPriority, getTask } from '../../services/todoist';
+import { priorityEmoji, formatDueDate, parseTimeToMinutes } from '../../services/parser';
 import { getTaskListMessageId, getTaskByIndex, getTaskByFuzzyMatch, pushUndoAction } from '../../services/session';
+import { handlePendingAction } from '../actions';
 
 export function registerAddCommand(bot: any) {
   bot.command('add', async (ctx: Context) => {
@@ -10,16 +11,21 @@ export function registerAddCommand(bot: any) {
       : '';
 
     if (!text) {
-      await ctx.reply('📝 Usage: /add <task text>\n_e.g. /add Buy milk #Personal tomorrow p2_\n_e.g. /add PT | every wednesday at 11:05_\n_e.g. /add Appointment #Physical-Therapy | Feb 18 at 11am for 1 hour_\n_e.g. /add Appointment #Physical-Therapy | Feb 18 at 11am | 1 hour_\n_e.g. /add Meeting | Feb 18 | 9:00am to 10:00am_', {
-        parse_mode: 'Markdown',
-      });
+      await ctx.reply(
+        '📝 Usage: /add <task text>\n' +
+        '_e.g. /add Buy milk #Personal tomorrow p2_\n' +
+        '_e.g. /add Meeting with John tomorrow at 2pm for 1h #Work_\n' +
+        '_e.g. /add Deep work session 2pm-4pm #Work_\n' +
+        '_e.g. /add Sprint planning next monday 9am to 10am_',
+        { parse_mode: 'Markdown' },
+      );
       return;
     }
 
     await addTask(ctx, text);
   });
 
-  // Plain text messages → reply-based actions or quick add
+  // Plain text messages → pending action, reply-based actions, or quick add
   bot.on('text', async (ctx: Context) => {
     if (!ctx.message || !('text' in ctx.message)) return;
     const text = ctx.message.text;
@@ -29,6 +35,10 @@ export function registerAddCommand(bot: any) {
 
     const chatId = ctx.chat?.id;
     if (!chatId) return;
+
+    // Check for pending inbox/plan action first
+    const handled = await handlePendingAction(ctx, chatId, text);
+    if (handled) return;
 
     // Check if this is a reply to a task list message
     const replyToId = ctx.message.reply_to_message?.message_id;
@@ -166,86 +176,38 @@ async function handleTaskAction(ctx: Context, chatId: number, text: string) {
 
 async function addTask(ctx: Context, text: string) {
   try {
-    // Support pipe-delimited syntax:
-    //   "task name | due string" (2-part)
-    //   "task name | due string | duration" (3-part)
-    const parts = text.split('|').map(s => s.trim());
-
-    let result;
-    let projectName: string | undefined;
+    let taskText = text;
     let durationMinutes: number | undefined;
 
-    if (parts.length >= 2) {
-      let content = parts[0];
-      let dueString = parts[1];
+    // 1. Extract "for Xh/Xm" duration pattern and strip it
+    const forDurMatch = taskText.match(/\bfor\s+(\d+(?:\.\d+)?)\s*(hours?|hrs?|h|minutes?|mins?|m)\b/i);
+    if (forDurMatch) {
+      const value = parseFloat(forDurMatch[1]);
+      const unit = forDurMatch[2].toLowerCase();
+      durationMinutes = unit.startsWith('h') ? Math.round(value * 60) : Math.round(value);
+      taskText = taskText.replace(forDurMatch[0], '').replace(/\s{2,}/g, ' ').trim();
+    }
 
-      // Extract #ProjectName from content
-      let projectId: string | undefined;
-      const projectMatch = content.match(/#([\w-]+)/);
-      if (projectMatch) {
-        const tag = projectMatch[1];
-        const projects = await getCachedProjects();
-        const matched = projects.find((p) => p.name.toLowerCase() === tag.toLowerCase());
-        if (matched) {
-          projectId = matched.id;
-          projectName = matched.name;
-        }
-        content = content.replace(/#[\w-]+/, '').replace(/\s{2,}/g, ' ').trim();
-      }
-
-      let duration: number | undefined;
-      let durationUnit: 'minute' | 'day' | undefined;
-
-      if (parts.length >= 3) {
-        // 3-part syntax: "task | due | duration or time range"
-        const durationPart = parts[2];
-
-        // Try explicit duration first (e.g. "1 hour", "for 30 min")
-        const durationMatch = durationPart.match(/(?:for\s+)?(\d+(?:\.\d+)?)\s*(hours?|hrs?|h|minutes?|mins?|m)/i);
-        // Try time range (e.g. "9:00am to 10:00am", "9am-10:30am")
-        const rangeMatch = durationPart.match(/^(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:to|-|–)\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)$/i);
-
-        if (rangeMatch) {
-          const startMinutes = parseTimeToMinutes(rangeMatch[1]);
-          const endMinutes = parseTimeToMinutes(rangeMatch[2]);
-          if (startMinutes !== null && endMinutes !== null && endMinutes > startMinutes) {
-            durationMinutes = endMinutes - startMinutes;
-            duration = durationMinutes;
-            durationUnit = 'minute';
-            // Append start time to due string
-            dueString = `${dueString} at ${rangeMatch[1].trim()}`;
-          }
-        } else if (durationMatch) {
-          const value = parseFloat(durationMatch[1]);
-          const unit = durationMatch[2].toLowerCase();
-          if (unit.startsWith('h')) {
-            durationMinutes = Math.round(value * 60);
-          } else {
-            durationMinutes = Math.round(value);
-          }
-          duration = durationMinutes;
-          durationUnit = 'minute';
-        }
-      } else {
-        // 2-part syntax: parse duration from due string (e.g. "for 1 hour", "for 30 min")
-        const durationMatch = dueString.match(/\bfor\s+(\d+(?:\.\d+)?)\s*(hours?|hrs?|h|minutes?|mins?|m)\b/i);
-        if (durationMatch) {
-          const value = parseFloat(durationMatch[1]);
-          const unit = durationMatch[2].toLowerCase();
-          if (unit.startsWith('h')) {
-            durationMinutes = Math.round(value * 60);
-          } else {
-            durationMinutes = Math.round(value);
-          }
-          duration = durationMinutes;
-          durationUnit = 'minute';
-          dueString = dueString.replace(durationMatch[0], '').trim();
+    // 2. Extract time range "Xam/pm-Xam/pm" or "Xam to Xam" → compute duration, keep start time
+    if (!durationMinutes) {
+      const rangeMatch = taskText.match(/(\d{1,2}(?::\d{2})?\s*(?:am|pm))\s*(?:to|-|–)\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm))/i);
+      if (rangeMatch) {
+        const startMin = parseTimeToMinutes(rangeMatch[1]);
+        const endMin = parseTimeToMinutes(rangeMatch[2]);
+        if (startMin !== null && endMin !== null && endMin > startMin) {
+          durationMinutes = endMin - startMin;
+          // Replace range with just start time so Todoist NLP gets the start
+          taskText = taskText.replace(rangeMatch[0], rangeMatch[1].trim()).replace(/\s{2,}/g, ' ').trim();
         }
       }
+    }
 
-      result = await addTaskWithDue(content, dueString, projectId, duration, durationUnit);
-    } else {
-      result = await quickAddTask(text);
+    // 3. Send to quickAddTask — Todoist NLP handles #Project, @label, p1-p4, dates, times
+    const result = await quickAddTask(taskText);
+
+    // 4. If we extracted a duration, update the task
+    if (durationMinutes && result.id) {
+      await updateTaskDuration(result.id, durationMinutes, 'minute');
     }
 
     const emoji = priorityEmoji(result.priority);
@@ -257,27 +219,15 @@ async function addTask(ctx: Context, text: string) {
         }
       : undefined;
     const due = dueInfo ? `\n📅 ${formatDueDate(dueInfo)}` : '';
-    const project = projectName ? `\n📁 ${projectName}` : '';
     const durationDisplay = durationMinutes
       ? `\n⏱ ${durationMinutes >= 60 ? `${durationMinutes / 60} hour${durationMinutes / 60 !== 1 ? 's' : ''}` : `${durationMinutes} min`}`
       : '';
 
     await ctx.reply(
-      `✅ Task added!\n\n${emoji} ${result.content}${project}${due}${durationDisplay}`,
+      `✅ Task added!\n\n${emoji} ${result.content}${due}${durationDisplay}`,
     );
   } catch (error) {
     console.error('Failed to add task:', error);
     await ctx.reply('❌ Failed to add task. Please try again.');
   }
-}
-
-function parseTimeToMinutes(time: string): number | null {
-  const match = time.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);
-  if (!match) return null;
-  let hours = parseInt(match[1], 10);
-  const minutes = match[2] ? parseInt(match[2], 10) : 0;
-  const meridiem = match[3]?.toLowerCase();
-  if (meridiem === 'pm' && hours !== 12) hours += 12;
-  if (meridiem === 'am' && hours === 12) hours = 0;
-  return hours * 60 + minutes;
 }

@@ -17,6 +17,9 @@ export interface SessionData {
   lastTaskListMessageId?: number;
   undoStack?: UndoAction[];
   focusTimer?: FocusTimer;
+  inboxQueue?: { tasks: FormattedTask[]; index: number };
+  planQueue?: { tasks: FormattedTask[]; index: number };
+  pendingAction?: { type: 'inbox_schedule' | 'inbox_move' | 'plan_timeblock'; taskId: string };
 }
 
 export interface CalendarEvent {

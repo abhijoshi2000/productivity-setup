@@ -217,6 +217,42 @@ export async function getProjectsWithCounts(): Promise<ProjectInfo[]> {
   }));
 }
 
+// Delete a task
+export async function deleteTask(taskId: string): Promise<void> {
+  await api.deleteTask(taskId);
+}
+
+// Move a task to a different project
+export async function moveTaskToProject(taskId: string, projectId: string): Promise<void> {
+  await api.moveTask(taskId, { projectId });
+}
+
+// Update task content
+export async function updateTaskContent(taskId: string, content: string): Promise<void> {
+  await api.updateTask(taskId, { content });
+}
+
+// Update task duration
+export async function updateTaskDuration(taskId: string, duration: number, durationUnit: 'minute' | 'day'): Promise<void> {
+  await api.updateTask(taskId, { duration, durationUnit });
+}
+
+// Update task description
+export async function updateTaskDescription(taskId: string, description: string): Promise<void> {
+  await api.updateTask(taskId, { description });
+}
+
+// Get all labels
+export async function getLabels(): Promise<{ id: string; name: string }[]> {
+  const response = await api.getLabels();
+  return response.results.map((l) => ({ id: l.id, name: l.name }));
+}
+
+// Get inbox tasks
+export async function getInboxTasks(): Promise<FormattedTask[]> {
+  return getTasksByFilter('#Inbox');
+}
+
 // Get productivity stats
 export async function getProductivityStats(): Promise<DailyStats> {
   const stats = await api.getProductivityStats();

@@ -23,6 +23,13 @@ import { registerBlockCommand } from './commands/block';
 import { registerFocusCommand } from './commands/focus';
 import { registerWeekRecapCommand } from './commands/week-recap';
 import { registerTimelineCommand } from './commands/timeline';
+import { registerEditCommand } from './commands/edit';
+import { registerDeleteCommand } from './commands/delete';
+import { registerMoveCommand } from './commands/move';
+import { registerLabelCommand } from './commands/label';
+import { registerSnoozeCommand } from './commands/snooze';
+import { registerInboxCommand } from './commands/inbox';
+import { registerPlanCommand } from './commands/plan';
 
 export function createBot(): Telegraf {
   const bot = new Telegraf(config.telegram.botToken);
@@ -54,6 +61,13 @@ export function createBot(): Telegraf {
   registerFocusCommand(bot);
   registerWeekRecapCommand(bot);
   registerTimelineCommand(bot);
+  registerEditCommand(bot);
+  registerDeleteCommand(bot);
+  registerMoveCommand(bot);
+  registerLabelCommand(bot);
+  registerSnoozeCommand(bot);
+  registerInboxCommand(bot);
+  registerPlanCommand(bot);
 
   // Add command + plain-text handler registered last
   registerAddCommand(bot);

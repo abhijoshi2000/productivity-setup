@@ -6,17 +6,22 @@ const HELP_TEXT = `
 📝 *Tasks*
 /add — Add a task _(or just type text)_
 /tasks — List tasks · /search — Search tasks
-/done — Complete · /reschedule — Move date
+/done · /edit · /delete
+/reschedule · /snooze · /move
 /undo — Undo last action
-_Batch: /done 1 3 5 · /reschedule 1-4 tomorrow_
+_Batch: /done 1 3 5 · /snooze 1 3 5 tomorrow_
 
 📅 *Views*
 /today · /tomorrow · /week · /next
 /briefing — Morning summary
 /evening — Evening wrap-up
 /free — Open calendar slots
-/timeline\\_today — Visual day timeline
-/timeline\\_tomorrow — Tomorrow's timeline
+/timeline\\_today · /timeline\\_tomorrow
+
+🧠 *Workflow*
+/inbox — Triage inbox tasks
+/plan — Plan your day
+/label — Filter by label
 
 🗓 *Calendar & Focus*
 /block — Create an event

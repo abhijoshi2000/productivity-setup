@@ -139,3 +139,69 @@ export function timeUntil(date: Date): string {
   if (hours < 24) return `in ${hours}h ${minutes % 60}m`;
   return `in ${Math.floor(hours / 24)}d`;
 }
+
+// Parse "2pm", "2:30pm", "14:30" → minutes from midnight
+export function parseTimeToMinutes(time: string): number | null {
+  const match = time.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);
+  if (!match) return null;
+  let hours = parseInt(match[1], 10);
+  const minutes = match[2] ? parseInt(match[2], 10) : 0;
+  const meridiem = match[3]?.toLowerCase();
+  if (meridiem === 'pm' && hours !== 12) hours += 12;
+  if (meridiem === 'am' && hours === 12) hours = 0;
+  return hours * 60 + minutes;
+}
+
+// Format minutes from midnight to "2:30pm" style string
+export function formatMinutesToTime(totalMinutes: number): string {
+  let hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  const meridiem = hours >= 12 ? 'pm' : 'am';
+  if (hours > 12) hours -= 12;
+  if (hours === 0) hours = 12;
+  return minutes > 0 ? `${hours}:${String(minutes).padStart(2, '0')}${meridiem}` : `${hours}${meridiem}`;
+}
+
+// Parse duration string like "1h", "45min", "1.5h", "30m" → minutes
+export function parseDurationToMinutes(input: string): number | null {
+  const match = input.trim().match(/^(\d+(?:\.\d+)?)\s*(hours?|hrs?|h|minutes?|mins?|m)$/i);
+  if (!match) return null;
+  const value = parseFloat(match[1]);
+  const unit = match[2].toLowerCase();
+  if (unit.startsWith('h')) return Math.round(value * 60);
+  return Math.round(value);
+}
+
+// Parse time range or time+duration: "2pm-3pm", "2pm 1h", "2pm for 1h"
+// Returns { startTime: string, durationMin: number | undefined }
+export function parseTimeBlock(input: string): { startTime: string; durationMin?: number } | null {
+  const trimmed = input.trim();
+
+  // Try time range: "2pm-3pm", "2:30pm to 4pm", "2pm – 3:30pm"
+  const rangeMatch = trimmed.match(/^(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:to|-|–)\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)$/i);
+  if (rangeMatch) {
+    const startMin = parseTimeToMinutes(rangeMatch[1]);
+    const endMin = parseTimeToMinutes(rangeMatch[2]);
+    if (startMin !== null && endMin !== null && endMin > startMin) {
+      return { startTime: rangeMatch[1].trim(), durationMin: endMin - startMin };
+    }
+  }
+
+  // Try time + duration: "2pm 1h", "2pm for 1h", "2:30pm for 45min"
+  const timeDurMatch = trimmed.match(/^(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s+(?:for\s+)?(\d+(?:\.\d+)?)\s*(hours?|hrs?|h|minutes?|mins?|m)$/i);
+  if (timeDurMatch) {
+    const startMin = parseTimeToMinutes(timeDurMatch[1]);
+    if (startMin !== null) {
+      const dur = parseDurationToMinutes(`${timeDurMatch[2]}${timeDurMatch[3]}`);
+      return { startTime: timeDurMatch[1].trim(), durationMin: dur ?? undefined };
+    }
+  }
+
+  // Just a time: "2pm", "2:30pm"
+  const justTime = parseTimeToMinutes(trimmed);
+  if (justTime !== null) {
+    return { startTime: trimmed };
+  }
+
+  return null;
+}
