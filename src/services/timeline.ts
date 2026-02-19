@@ -191,15 +191,19 @@ export async function generateTimelineImage(
     });
   }
 
-  // Build time blocks from completed tasks (placed at completion time)
+  // Build time blocks from completed tasks (placed at original scheduled time if available)
   for (const task of completedTasks) {
-    if (!task.completedAt) continue;
-    const dt = new Date(task.completedAt);
+    const scheduledTime = task.due?.datetime;
+    const fallbackTime = task.completedAt;
+    if (!scheduledTime && !fallbackTime) continue;
+    const dt = new Date(scheduledTime ?? fallbackTime);
     const startMin = toMinutesInTz(dt);
+    const durationMin =
+      task.duration && task.durationUnit === 'minute' ? task.duration : 30;
     timeBlocks.push({
       label: task.content,
       startMin,
-      endMin: startMin + 20, // slim block
+      endMin: startMin + durationMin,
       color: '#2d5a2d',
       textColor: '#88aa88',
       type: 'completed',

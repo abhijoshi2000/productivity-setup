@@ -126,6 +126,14 @@ export async function getCompletedTasksToday(): Promise<CompletedTask[]> {
         projectName: projectMap.get(task.projectId) ?? 'Unknown',
         completedAt: task.completedAt ?? '',
         priority: task.priority,
+        due: task.due
+          ? {
+              date: task.due.date,
+              datetime: task.due.datetime ?? undefined,
+            }
+          : undefined,
+        duration: task.duration?.amount,
+        durationUnit: task.duration?.unit as 'minute' | 'day' | undefined,
       });
     }
 

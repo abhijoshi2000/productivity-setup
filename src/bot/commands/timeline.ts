@@ -24,7 +24,7 @@ export async function generateTimelineBuffer(): Promise<Buffer> {
     console.log(`  Task: "${t.content}" datetime=${t.due?.datetime ?? 'none'} duration=${t.duration ?? 'none'} unit=${t.durationUnit ?? 'none'}`);
   }
   for (const c of completedTasks) {
-    console.log(`  Completed: "${c.content}" completedAt=${c.completedAt} local=${new Date(c.completedAt).toLocaleString('en-US', { timeZone: config.timezone })}`);
+    console.log(`  Completed: "${c.content}" completedAt=${c.completedAt} due.datetime=${c.due?.datetime ?? 'none'} duration=${c.duration ?? 'none'} unit=${c.durationUnit ?? 'none'}`);
   }
 
   const now = new Date();

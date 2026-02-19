@@ -92,6 +92,12 @@ export interface CompletedTask {
   projectName: string;
   completedAt: string; // ISO datetime
   priority: number;
+  due?: {
+    date: string;
+    datetime?: string;
+  };
+  duration?: number;
+  durationUnit?: 'minute' | 'day';
 }
 
 // Feature 8: Focus Timer
