@@ -47,11 +47,20 @@ export function registerTasksCommand(bot: any) {
         const mapping = mappings.find((m) => m.taskId === task.id);
         const idx = mapping ? `${mapping.index}.` : '•';
         const emoji = priorityEmoji(task.priority);
-        const due = task.due ? ` 📅 ${formatDueDate(task.due)}` : '';
-        const project = task.projectName ? ` _[${task.projectName}]_` : '';
-        const labels = task.labels.length > 0 ? ` ${task.labels.map((l) => `@${l}`).join(' ')}` : '';
 
-        lines.push(`${idx} ${emoji} ${task.content}${due}${project}${labels}`);
+        lines.push(`${idx} ${emoji} ${task.content}`);
+
+        // Metadata line
+        const meta: string[] = [];
+        if (task.due) meta.push(`📅 ${formatDueDate(task.due)}`);
+        if (task.duration && task.durationUnit === 'minute') {
+          meta.push(`⏱ ${task.duration >= 60 ? `${task.duration / 60}h` : `${task.duration}m`}`);
+        }
+        if (task.projectName) meta.push(`📁 ${task.projectName}`);
+        if (task.labels.length > 0) meta.push(task.labels.map((l) => `@${l}`).join(' '));
+        if (meta.length > 0) {
+          lines.push(`     ${meta.join(' · ')}`);
+        }
       }
 
       lines.push('');
