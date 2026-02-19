@@ -15,13 +15,14 @@ export function registerEditCommand(bot: any) {
     if (!text) {
       await ctx.reply(
         '✏️ Usage:\n' +
-        '/edit 3 Buy groceries — update content\n' +
-        '/edit 3 duration 45min — set duration\n' +
-        '/edit 3 time 2pm-3pm — set time + duration\n' +
-        '/edit 3 time 2pm 1h — set time + duration\n' +
-        '/edit 3 time 2pm — set start time\n' +
-        '/edit 3 description Call ahead — set description\n\n' +
+        '_/edit 3 Buy groceries_ — update content\n' +
+        '_/edit 3 duration 45min_ — set duration\n' +
+        '_/edit 3 time 2pm-3pm_ — set time + duration\n' +
+        '_/edit 3 time 2pm 1h_ — set time + duration\n' +
+        '_/edit 3 time 2pm_ — set start time\n' +
+        '_/edit 3 description Call ahead_ — set description\n\n' +
         '💡 Run /tasks first to see numbered tasks',
+        { parse_mode: 'Markdown' },
       );
       return;
     }

@@ -239,6 +239,7 @@ async function addTask(ctx: Context, text: string) {
 
     await ctx.reply(
       `✅ Task added!\n\n${emoji} ${result.content}${due}${durationDisplay}`,
+      { parse_mode: 'Markdown' },
     );
   } catch (error) {
     console.error('Failed to add task:', error);

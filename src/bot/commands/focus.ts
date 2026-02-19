@@ -29,7 +29,7 @@ export function registerFocusCommand(bot: any) {
     if (text.toLowerCase() === 'status') {
       const timer = getFocusTimer(chatId);
       if (!timer) {
-        await ctx.reply('No active focus session. Start one with /focus [minutes] [task]');
+        await ctx.reply('⏹ No active focus session. Start one with /focus [minutes] [task]');
         return;
       }
       const remaining = Math.max(0, Math.round((timer.endsAt - Date.now()) / 60000));

@@ -58,7 +58,7 @@ export function registerDeleteCommand(bot: any) {
         if (failed.length > 0) {
           lines.push(`❌ Failed: ${failed.join(', ')}`);
         }
-        await ctx.reply(lines.join('\n'));
+        await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown' });
         return;
       }
 

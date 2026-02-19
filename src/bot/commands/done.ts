@@ -13,7 +13,7 @@ export function registerDoneCommand(bot: any) {
 
     if (!text) {
       await ctx.reply(
-        '✏️ Usage: /done <number or task name>\n' +
+        '✅ Usage: /done <number or task name>\n' +
         '_e.g. /done 1, /done buy milk_\n' +
         '_e.g. /done 1 3 5 (batch complete)_\n\n' +
         '💡 Run /tasks first to see numbered tasks',
@@ -71,7 +71,7 @@ export function registerDoneCommand(bot: any) {
         if (failed.length > 0) {
           lines.push(`❌ Failed: ${failed.join(', ')}`);
         }
-        await ctx.reply(lines.join('\n'));
+        await ctx.reply(lines.join('\n'), { parse_mode: 'Markdown' });
         return;
       }
 

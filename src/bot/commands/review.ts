@@ -32,7 +32,7 @@ export function registerReviewCommand(bot: any) {
           lines.push(`${emoji} ${task.content}${due}`);
         }
         if (overdueTasks.length > 5) {
-          lines.push(`_...and ${overdueTasks.length - 5} more_`);
+          lines.push(`_... and ${overdueTasks.length - 5} more_`);
         }
         lines.push('');
       }
@@ -46,7 +46,7 @@ export function registerReviewCommand(bot: any) {
           lines.push(`${emoji} ${task.content}${due}`);
         }
         if (weekTasks.length > 5) {
-          lines.push(`_...and ${weekTasks.length - 5} more_`);
+          lines.push(`_... and ${weekTasks.length - 5} more_`);
         }
         lines.push('');
       }
