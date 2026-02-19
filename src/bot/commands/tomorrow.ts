@@ -55,8 +55,9 @@ export function registerTomorrowCommand(bot: any) {
         for (const task of sortedTasks) {
           const emoji = priorityEmoji(task.priority);
           const due = task.due ? ` 📅 ${formatDueDate(task.due)}` : '';
+          const dur = task.duration && task.durationUnit === 'minute' ? ` ⏱ ${task.duration >= 60 ? `${task.duration / 60}h` : `${task.duration}m`}` : '';
           const project = task.projectName ? ` · ${task.projectName}` : '';
-          lines.push(`${emoji} ${task.content}${due}${project}`);
+          lines.push(`${emoji} ${task.content}${due}${dur}${project}`);
         }
       } else {
         lines.push('✅ *Tasks*');
