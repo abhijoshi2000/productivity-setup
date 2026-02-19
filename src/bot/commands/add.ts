@@ -1,6 +1,6 @@
 import { Context } from 'telegraf';
 import { quickAddTask, updateTaskDuration, completeTask, rescheduleTask, updateTaskPriority, getTask } from '../../services/todoist';
-import { priorityEmoji, formatDueDate, parseTimeToMinutes } from '../../services/parser';
+import { priorityEmoji, formatDueDate, parseTimeToMinutes, parseDurationToMinutes } from '../../services/parser';
 import { getTaskListMessageId, getTaskByIndex, getTaskByFuzzyMatch, pushUndoAction } from '../../services/session';
 import { handlePendingAction } from '../actions';
 
@@ -179,13 +179,15 @@ async function addTask(ctx: Context, text: string) {
     let taskText = text;
     let durationMinutes: number | undefined;
 
-    // 1. Extract "for Xh/Xm" duration pattern and strip it
-    const forDurMatch = taskText.match(/\bfor\s+(\d+(?:\.\d+)?)\s*(hours?|hrs?|h|minutes?|mins?|m)\b/i);
+    // 1. Extract "for <duration>" pattern and strip it
+    //    Supports: for 1h, for 90m, for 1.5h, for 1h30m, for 1hr30, for 1h30min
+    const forDurMatch = taskText.match(/\bfor\s+(\d+(?:\.\d+)?\s*(?:hours?|hrs?|h)\s*\d+\s*(?:minutes?|mins?|m)?|\d+(?:\.\d+)?\s*(?:hours?|hrs?|h|minutes?|mins?|m))\b/i);
     if (forDurMatch) {
-      const value = parseFloat(forDurMatch[1]);
-      const unit = forDurMatch[2].toLowerCase();
-      durationMinutes = unit.startsWith('h') ? Math.round(value * 60) : Math.round(value);
-      taskText = taskText.replace(forDurMatch[0], '').replace(/\s{2,}/g, ' ').trim();
+      const parsed = parseDurationToMinutes(forDurMatch[1]);
+      if (parsed) {
+        durationMinutes = parsed;
+        taskText = taskText.replace(forDurMatch[0], '').replace(/\s{2,}/g, ' ').trim();
+      }
     }
 
     // 2. Extract time range "Xam/pm-Xam/pm" or "Xam to Xam" → compute duration, keep start time

@@ -162,14 +162,26 @@ export function formatMinutesToTime(totalMinutes: number): string {
   return minutes > 0 ? `${hours}:${String(minutes).padStart(2, '0')}${meridiem}` : `${hours}${meridiem}`;
 }
 
-// Parse duration string like "1h", "45min", "1.5h", "30m" → minutes
+// Parse duration string like "1h", "45min", "1.5h", "30m", "1h30m", "1hr30", "2h15min" → minutes
 export function parseDurationToMinutes(input: string): number | null {
-  const match = input.trim().match(/^(\d+(?:\.\d+)?)\s*(hours?|hrs?|h|minutes?|mins?|m)$/i);
-  if (!match) return null;
-  const value = parseFloat(match[1]);
-  const unit = match[2].toLowerCase();
-  if (unit.startsWith('h')) return Math.round(value * 60);
-  return Math.round(value);
+  const trimmed = input.trim();
+
+  // Compound: "1h30m", "1hr30min", "1h30", "2hr15m"
+  const compound = trimmed.match(/^(\d+)\s*(hours?|hrs?|h)\s*(\d+)\s*(minutes?|mins?|m)?$/i);
+  if (compound) {
+    return parseInt(compound[1], 10) * 60 + parseInt(compound[3], 10);
+  }
+
+  // Simple: "1h", "1.5h", "45min", "90m"
+  const simple = trimmed.match(/^(\d+(?:\.\d+)?)\s*(hours?|hrs?|h|minutes?|mins?|m)$/i);
+  if (simple) {
+    const value = parseFloat(simple[1]);
+    const unit = simple[2].toLowerCase();
+    if (unit.startsWith('h')) return Math.round(value * 60);
+    return Math.round(value);
+  }
+
+  return null;
 }
 
 // Parse time range or time+duration: "2pm-3pm", "2pm 1h", "2pm for 1h"

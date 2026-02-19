@@ -4,7 +4,6 @@ import { getTodayEvents } from '../../services/calendar';
 import { isCalendarConfigured, config } from '../../config';
 import { priorityEmoji, formatTime, formatDueDate, timeUntil, separateAndMergeBusy, formatMeetingBlocks, separateBirthdays, formatBirthdayLines } from '../../services/parser';
 import { setTaskMappings, setTaskListMessageId } from '../../services/session';
-import { buildTaskKeyboard } from '../actions';
 
 export function registerTodayCommand(bot: any) {
   bot.command('today', async (ctx: Context) => {
@@ -88,10 +87,8 @@ export function registerTodayCommand(bot: any) {
       lines.push('');
       lines.push(`📊 ${total} task${total !== 1 ? 's' : ''} total`);
 
-      const keyboard = buildTaskKeyboard(allTasks);
       const sent = await ctx.reply(lines.join('\n'), {
         parse_mode: 'Markdown',
-        ...keyboard,
       });
       setTaskListMessageId(chatId, sent.message_id);
     } catch (error) {
