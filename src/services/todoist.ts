@@ -259,7 +259,7 @@ export async function getProductivityStats(): Promise<DailyStats> {
   return {
     completedToday: stats.daysItems?.[0]?.totalCompleted ?? 0,
     completedThisWeek: stats.weekItems?.[0]?.totalCompleted ?? 0,
-    dailyGoal: stats.goals?.dailyGoal ?? 5,
+    dailyGoal: 5,
     weeklyGoal: stats.goals?.weeklyGoal ?? 25,
     currentDailyStreak: stats.goals?.currentDailyStreak?.count ?? 0,
     currentWeeklyStreak: stats.goals?.currentWeeklyStreak?.count ?? 0,

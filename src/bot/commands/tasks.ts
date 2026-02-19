@@ -1,6 +1,6 @@
 import { Context } from 'telegraf';
 import { getTasksByFilter, getTodayTasks, getCompletedTasksToday } from '../../services/todoist';
-import { priorityEmoji, formatDueDate } from '../../services/parser';
+import { priorityEmoji } from '../../services/parser';
 import { setTaskMappings, setTaskListMessageId } from '../../services/session';
 
 
@@ -49,18 +49,6 @@ export function registerTasksCommand(bot: any) {
         const emoji = priorityEmoji(task.priority);
 
         lines.push(`${idx} ${emoji} ${task.content}`);
-
-        // Metadata line
-        const meta: string[] = [];
-        if (task.due) meta.push(formatDueDate(task.due));
-        if (task.duration && task.durationUnit === 'minute') {
-          meta.push(task.duration >= 60 ? `${task.duration / 60}h` : `${task.duration}m`);
-        }
-        if (task.projectName) meta.push(task.projectName);
-        if (task.labels.length > 0) meta.push(task.labels.map((l) => `@${l}`).join(' '));
-        if (meta.length > 0) {
-          lines.push(`     ${meta.join(' · ')}`);
-        }
       }
 
       // Completed tasks (only for default "today" view)
@@ -69,9 +57,9 @@ export function registerTasksCommand(bot: any) {
         if (completedTasks.length > 0) {
           lines.push('');
           lines.push(`✔️ *Completed (${completedTasks.length})*`);
-          for (const task of completedTasks) {
-            lines.push(`✓ _${task.content}_ · ${task.projectName}`);
-          }
+          completedTasks.forEach((task, i) => {
+            lines.push(`${i + 1}. ✓ ${task.content}`);
+          });
         }
       }
 
