@@ -43,7 +43,7 @@ interface TimeBlock {
   endMin: number;
   color: string;
   textColor: string;
-  type: 'event' | 'task';
+  type: 'event' | 'task' | 'completed';
   priority?: number;
 }
 
@@ -188,6 +188,21 @@ export async function generateTimelineImage(
       textColor: '#ffffff',
       type: 'task',
       priority: task.priority,
+    });
+  }
+
+  // Build time blocks from completed tasks (placed at completion time)
+  for (const task of completedTasks) {
+    if (!task.completedAt) continue;
+    const dt = new Date(task.completedAt);
+    const startMin = toMinutesInTz(dt);
+    timeBlocks.push({
+      label: task.content,
+      startMin,
+      endMin: startMin + 20, // slim block
+      color: '#2d5a2d',
+      textColor: '#88aa88',
+      type: 'completed',
     });
   }
 
@@ -340,7 +355,7 @@ export async function generateTimelineImage(
       const w = colWidth - BLOCK_PAD;
 
       ctx.fillStyle = block.color;
-      ctx.globalAlpha = 0.85;
+      ctx.globalAlpha = block.type === 'completed' ? 0.6 : 0.85;
       roundRect(ctx, x, y, w, h, BLOCK_RADIUS);
       ctx.fill();
       ctx.globalAlpha = 1;
@@ -355,16 +370,17 @@ export async function generateTimelineImage(
         const startH = Math.floor(block.startMin / 60);
         const startM = block.startMin % 60;
         const timeStr = `${startH % 12 || 12}:${String(startM).padStart(2, '0')}`;
+        const labelPrefix = block.type === 'completed' ? '\u2713 ' : '';
 
         if (h >= 44) {
           // Two lines: time on first, label on second
           ctx.font = '11px sans-serif';
           ctx.fillText(timeStr, x + 6, y + 16);
           ctx.font = 'bold 13px sans-serif';
-          ctx.fillText(truncateText(ctx, block.label, textMaxW), x + 6, y + 32);
+          ctx.fillText(truncateText(ctx, labelPrefix + block.label, textMaxW), x + 6, y + 32);
         } else {
           // Single line
-          const combined = `${timeStr} ${block.label}`;
+          const combined = `${timeStr} ${labelPrefix}${block.label}`;
           ctx.fillText(truncateText(ctx, combined, textMaxW), x + 6, y + h / 2 + 5);
         }
       }
