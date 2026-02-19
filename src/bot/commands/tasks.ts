@@ -1,5 +1,5 @@
 import { Context } from 'telegraf';
-import { getTasksByFilter, getTodayTasks } from '../../services/todoist';
+import { getTasksByFilter, getTodayTasks, getCompletedTasksToday } from '../../services/todoist';
 import { priorityEmoji, formatDueDate } from '../../services/parser';
 import { setTaskMappings, setTaskListMessageId } from '../../services/session';
 
@@ -60,6 +60,18 @@ export function registerTasksCommand(bot: any) {
         if (task.labels.length > 0) meta.push(task.labels.map((l) => `@${l}`).join(' '));
         if (meta.length > 0) {
           lines.push(`     ${meta.join(' · ')}`);
+        }
+      }
+
+      // Completed tasks (only for default "today" view)
+      if (!text) {
+        const completedTasks = await getCompletedTasksToday();
+        if (completedTasks.length > 0) {
+          lines.push('');
+          lines.push(`✔️ *Completed (${completedTasks.length})*`);
+          for (const task of completedTasks) {
+            lines.push(`✓ _${task.content}_ · ${task.projectName}`);
+          }
         }
       }
 
