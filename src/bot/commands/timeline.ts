@@ -12,11 +12,20 @@ export async function generateTimelineBuffer(): Promise<Buffer> {
     getCompletedTasksToday(),
   ]);
 
-  const allDayCount = events.filter((e) => e.isAllDay).length;
-  const timedCount = events.filter((e) => !e.isAllDay).length;
+  const allDayEvents = events.filter((e) => e.isAllDay);
+  const timedEvents = events.filter((e) => !e.isAllDay);
   console.log(
-    `Timeline debug — Today tasks: ${todayTasks.length}, Overdue: ${overdueTasks.length}, Events: ${events.length} (all-day: ${allDayCount}, timed: ${timedCount}), Completed: ${completedTasks.length}`,
+    `Timeline debug — Today tasks: ${todayTasks.length}, Overdue: ${overdueTasks.length}, Events: ${events.length} (all-day: ${allDayEvents.length}, timed: ${timedEvents.length}), Completed: ${completedTasks.length}`,
   );
+  for (const e of timedEvents) {
+    console.log(`  Event: "${e.summary}" start=${e.start.toISOString()} end=${e.end.toISOString()} localStart=${e.start.toLocaleString('en-US', { timeZone: config.timezone })}`);
+  }
+  for (const t of todayTasks) {
+    console.log(`  Task: "${t.content}" datetime=${t.due?.datetime ?? 'none'} duration=${t.duration ?? 'none'} unit=${t.durationUnit ?? 'none'}`);
+  }
+  for (const c of completedTasks) {
+    console.log(`  Completed: "${c.content}" completedAt=${c.completedAt} local=${new Date(c.completedAt).toLocaleString('en-US', { timeZone: config.timezone })}`);
+  }
 
   const now = new Date();
   const dateLabel = now.toLocaleDateString('en-US', {

@@ -124,9 +124,9 @@ function assignColumns(blocks: TimeBlock[]): { block: TimeBlock; col: number; to
 
 /** Convert a Date to minutes-from-midnight in the configured timezone */
 function toMinutesInTz(date: Date): number {
-  const h = parseInt(date.toLocaleString('en-US', { timeZone: config.timezone, hour: 'numeric', hour12: false }), 10);
-  const m = parseInt(date.toLocaleString('en-US', { timeZone: config.timezone, minute: 'numeric' }), 10);
-  return h * 60 + m;
+  const str = date.toLocaleString('en-US', { timeZone: config.timezone });
+  const local = new Date(str);
+  return local.getHours() * 60 + local.getMinutes();
 }
 
 function nowInTimezone(): Date {
