@@ -1,5 +1,5 @@
 import { createCanvas, CanvasRenderingContext2D } from 'canvas';
-import { FormattedTask, CalendarEvent } from '../types';
+import { FormattedTask, CalendarEvent, CompletedTask } from '../types';
 import { config } from '../config';
 
 // Layout constants
@@ -25,6 +25,9 @@ const OVERDUE_BG = '#3a1a1a';
 const UNSCHEDULED_BG = '#2a2a3a';
 const ALL_DAY_BG = '#264653';
 const ALL_DAY_TEXT = '#e0f0f0';
+const COMPLETED_BG = '#1a3a1a';
+const COMPLETED_HEADER = '#66bb6a';
+const COMPLETED_TEXT = '#88aa88';
 
 const EVENT_COLOR = '#2a9d8f';
 const PRIORITY_COLORS: Record<number, string> = {
@@ -129,6 +132,7 @@ export async function generateTimelineImage(
   overdueTasks: FormattedTask[],
   events: CalendarEvent[],
   dateLabel: string,
+  completedTasks: CompletedTask[] = [],
 ): Promise<Buffer> {
   const workStartMin = parseWorkHour(config.workHoursStart);
   const workEndMin = parseWorkHour(config.workHoursEnd);
@@ -220,6 +224,14 @@ export async function generateTimelineImage(
       : 0;
   const unschedY = yOffset;
   yOffset += unschedHeight;
+
+  // Completed section
+  const completedHeight =
+    completedTasks.length > 0
+      ? SECTION_PAD + 24 + completedTasks.length * ROW_HEIGHT + SECTION_PAD
+      : 0;
+  const completedY = yOffset;
+  yOffset += completedHeight;
 
   const canvasHeight = yOffset + 20; // bottom padding
 
@@ -400,6 +412,33 @@ export async function generateTimelineImage(
       ctx.arc(LEFT_GUTTER + 6, y - 5, 5, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#ccccdd';
+      const text = truncateText(ctx, task.content, TIMELINE_WIDTH - 20);
+      ctx.fillText(text, LEFT_GUTTER + 18, y);
+    });
+  }
+
+  // Completed section
+  if (completedTasks.length > 0) {
+    ctx.fillStyle = COMPLETED_BG;
+    ctx.fillRect(0, completedY, CANVAS_WIDTH, completedHeight);
+    ctx.fillStyle = COMPLETED_HEADER;
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(
+      `COMPLETED (${completedTasks.length})`,
+      LEFT_GUTTER,
+      completedY + SECTION_PAD + 16,
+    );
+    ctx.font = '14px sans-serif';
+    completedTasks.forEach((task, i) => {
+      const y = completedY + SECTION_PAD + 24 + i * ROW_HEIGHT + 20;
+      // Checkmark indicator
+      ctx.fillStyle = COMPLETED_HEADER;
+      ctx.font = 'bold 14px sans-serif';
+      ctx.fillText('\u2713', LEFT_GUTTER + 2, y);
+      // Task text in muted style
+      ctx.fillStyle = COMPLETED_TEXT;
+      ctx.font = '14px sans-serif';
       const text = truncateText(ctx, task.content, TIMELINE_WIDTH - 20);
       ctx.fillText(text, LEFT_GUTTER + 18, y);
     });
