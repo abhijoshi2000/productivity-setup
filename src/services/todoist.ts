@@ -102,7 +102,7 @@ export async function getCompletedThisWeek(): Promise<number> {
   return stats.weekItems?.[0]?.totalCompleted ?? 0;
 }
 
-// Get completed tasks for today (with full task details)
+// Get completed tasks for today (by original due date, preserving scheduled time)
 export async function getCompletedTasksToday(): Promise<CompletedTask[]> {
   const { startOfDayInTz } = await import('./calendar');
   const since = startOfDayInTz(0).toISOString();
@@ -114,7 +114,7 @@ export async function getCompletedTasksToday(): Promise<CompletedTask[]> {
   let cursor: string | null = null;
 
   do {
-    const response = await api.getCompletedTasksByCompletionDate({
+    const response = await api.getCompletedTasksByDueDate({
       since,
       until,
       ...(cursor && { cursor }),
