@@ -1,6 +1,6 @@
 import { Context } from 'telegraf';
 import { getTasksByFilter } from '../../services/todoist';
-import { priorityEmoji, formatDueDate } from '../../services/parser';
+import { priorityEmoji, formatDueDate, sortTasksByTime } from '../../services/parser';
 import { setTaskMappings, setTaskListMessageId } from '../../services/session';
 
 export function registerSearchCommand(bot: any) {
@@ -32,7 +32,7 @@ export function registerSearchCommand(bot: any) {
         task.labels.some((l) => l.toLowerCase().includes(lower)),
       );
 
-      const display = matches.slice(0, 15);
+      const display = sortTasksByTime(matches.slice(0, 15));
       const mappings = setTaskMappings(chatId, display);
 
       if (display.length === 0) {

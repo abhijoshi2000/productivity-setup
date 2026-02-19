@@ -1,6 +1,6 @@
 import { Context } from 'telegraf';
 import { getLabels, getTasksByFilter } from '../../services/todoist';
-import { priorityEmoji, formatDueDate } from '../../services/parser';
+import { priorityEmoji, formatDueDate, sortTasksByTime } from '../../services/parser';
 import { setTaskMappings, setTaskListMessageId } from '../../services/session';
 
 export function registerLabelCommand(bot: any) {
@@ -32,7 +32,7 @@ export function registerLabelCommand(bot: any) {
 
       // With arg: filter tasks by label
       const labelName = text.replace(/^@/, '');
-      const tasks = await getTasksByFilter(`@${labelName}`);
+      const tasks = sortTasksByTime(await getTasksByFilter(`@${labelName}`));
       const mappings = setTaskMappings(chatId, tasks);
 
       if (tasks.length === 0) {

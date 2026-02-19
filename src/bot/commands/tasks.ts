@@ -1,6 +1,6 @@
 import { Context } from 'telegraf';
 import { getTasksByFilter, getTodayTasks, getCompletedTasksToday } from '../../services/todoist';
-import { priorityEmoji } from '../../services/parser';
+import { priorityEmoji, sortTasksByTime } from '../../services/parser';
 import { setTaskMappings, setTaskListMessageId } from '../../services/session';
 
 
@@ -32,6 +32,7 @@ export function registerTasksCommand(bot: any) {
         filterLabel = 'today';
       }
 
+      tasks = sortTasksByTime(tasks);
       const mappings = setTaskMappings(chatId, tasks);
 
       if (tasks.length === 0) {
