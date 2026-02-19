@@ -122,6 +122,13 @@ function assignColumns(blocks: TimeBlock[]): { block: TimeBlock; col: number; to
   });
 }
 
+/** Convert a Date to minutes-from-midnight in the configured timezone */
+function toMinutesInTz(date: Date): number {
+  const h = parseInt(date.toLocaleString('en-US', { timeZone: config.timezone, hour: 'numeric', hour12: false }), 10);
+  const m = parseInt(date.toLocaleString('en-US', { timeZone: config.timezone, minute: 'numeric' }), 10);
+  return h * 60 + m;
+}
+
 function nowInTimezone(): Date {
   const str = new Date().toLocaleString('en-US', { timeZone: config.timezone });
   return new Date(str);
@@ -144,8 +151,8 @@ export async function generateTimelineImage(
 
   // Build time blocks from events
   const timeBlocks: TimeBlock[] = timedEvents.map((e) => {
-    const startMin = e.start.getHours() * 60 + e.start.getMinutes();
-    const endMin = e.end.getHours() * 60 + e.end.getMinutes();
+    const startMin = toMinutesInTz(e.start);
+    const endMin = toMinutesInTz(e.end);
     return {
       label: e.summary,
       startMin,
@@ -170,7 +177,7 @@ export async function generateTimelineImage(
   // Build time blocks from timed tasks
   for (const task of timedTasks) {
     const dt = new Date(task.due!.datetime!);
-    const startMin = dt.getHours() * 60 + dt.getMinutes();
+    const startMin = toMinutesInTz(dt);
     const durationMin =
       task.duration && task.durationUnit === 'minute' ? task.duration : 30;
     timeBlocks.push({
