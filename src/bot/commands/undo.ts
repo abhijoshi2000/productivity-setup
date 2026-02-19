@@ -1,5 +1,5 @@
 import { Context } from 'telegraf';
-import { reopenTask, rescheduleTask, updateTaskPriority } from '../../services/todoist';
+import { reopenTask, rescheduleTask, updateTaskPriority, deleteTask } from '../../services/todoist';
 import { popUndoAction } from '../../services/session';
 
 export function registerUndoCommand(bot: any) {
@@ -48,6 +48,11 @@ export function registerUndoCommand(bot: any) {
           await ctx.reply(`↩️ Restored priority: *${action.taskContent}* → p${userP}`, {
             parse_mode: 'Markdown',
           });
+          break;
+        }
+        case 'add': {
+          await deleteTask(action.taskId);
+          await ctx.reply(`↩️ Deleted: *${action.taskContent}*`, { parse_mode: 'Markdown' });
           break;
         }
       }

@@ -210,6 +210,18 @@ async function addTask(ctx: Context, text: string) {
       await updateTaskDuration(result.id, durationMinutes, 'minute');
     }
 
+    // Push undo action so /undo deletes the newly added task
+    const chatId = ctx.chat?.id;
+    if (chatId && result.id) {
+      pushUndoAction(chatId, {
+        type: 'add',
+        taskId: result.id,
+        taskContent: result.content,
+        previousState: {},
+        timestamp: Date.now(),
+      });
+    }
+
     const emoji = priorityEmoji(result.priority);
     const dueInfo = result.due
       ? {

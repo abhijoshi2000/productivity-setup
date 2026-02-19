@@ -75,7 +75,7 @@ export interface ProjectInfo {
 }
 
 // Feature 5: Undo
-export type UndoActionType = 'complete' | 'reschedule' | 'priority';
+export type UndoActionType = 'complete' | 'reschedule' | 'priority' | 'add';
 export interface UndoAction {
   type: UndoActionType;
   taskId: string;
