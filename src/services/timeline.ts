@@ -129,6 +129,26 @@ function toMinutesInTz(date: Date): number {
   return local.getHours() * 60 + local.getMinutes();
 }
 
+/**
+ * Parse a time from a Todoist due.string like "today at 7:30am", "Feb 18 at 2pm", etc.
+ * Returns minutes from midnight, or undefined if no time found.
+ */
+function parseTimeFromDueString(dueString: string): number | undefined {
+  // Match patterns like "7:30am", "7:30 am", "2pm", "2 pm", "14:30"
+  const match = dueString.match(/(\d{1,2}):(\d{2})\s*(am|pm)?/i)
+    ?? dueString.match(/(\d{1,2})\s*(am|pm)/i);
+  if (!match) return undefined;
+
+  let hours = parseInt(match[1], 10);
+  const minutes = match[2] && !match[2].match(/am|pm/i) ? parseInt(match[2], 10) : 0;
+  const ampm = (match[3] ?? match[2])?.toLowerCase();
+
+  if (ampm === 'pm' && hours < 12) hours += 12;
+  if (ampm === 'am' && hours === 12) hours = 0;
+
+  return hours * 60 + minutes;
+}
+
 function nowInTimezone(): Date {
   const str = new Date().toLocaleString('en-US', { timeZone: config.timezone });
   return new Date(str);
@@ -193,11 +213,22 @@ export async function generateTimelineImage(
 
   // Build time blocks from completed tasks (placed at original scheduled time if available)
   for (const task of completedTasks) {
-    const scheduledTime = task.due?.datetime;
-    const fallbackTime = task.completedAt;
-    if (!scheduledTime && !fallbackTime) continue;
-    const dt = new Date(scheduledTime ?? fallbackTime);
-    const startMin = toMinutesInTz(dt);
+    let startMin: number | undefined;
+
+    if (task.due?.datetime) {
+      // Best case: explicit datetime preserved
+      startMin = toMinutesInTz(new Date(task.due.datetime));
+    } else if (task.due?.string) {
+      // Fallback: parse time from natural language due string (e.g. "today at 7:30am")
+      startMin = parseTimeFromDueString(task.due.string);
+    }
+
+    if (startMin === undefined) {
+      // Last resort: use completion time
+      if (!task.completedAt) continue;
+      startMin = toMinutesInTz(new Date(task.completedAt));
+    }
+
     const durationMin =
       task.duration && task.durationUnit === 'minute' ? task.duration : 30;
     timeBlocks.push({

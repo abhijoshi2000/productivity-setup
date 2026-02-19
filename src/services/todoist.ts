@@ -121,6 +121,7 @@ export async function getCompletedTasksToday(): Promise<CompletedTask[]> {
     });
 
     for (const task of response.items) {
+      console.log(`  [getCompletedTasksToday] "${task.content}" due=${JSON.stringify(task.due)} duration=${JSON.stringify(task.duration)}`);
       allTasks.push({
         content: task.content,
         projectName: projectMap.get(task.projectId) ?? 'Unknown',
@@ -130,6 +131,7 @@ export async function getCompletedTasksToday(): Promise<CompletedTask[]> {
           ? {
               date: task.due.date,
               datetime: task.due.datetime ?? undefined,
+              string: task.due.string ?? undefined,
             }
           : undefined,
         duration: task.duration?.amount,

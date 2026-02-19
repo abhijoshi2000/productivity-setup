@@ -95,6 +95,7 @@ export interface CompletedTask {
   due?: {
     date: string;
     datetime?: string;
+    string?: string;
   };
   duration?: number;
   durationUnit?: 'minute' | 'day';
