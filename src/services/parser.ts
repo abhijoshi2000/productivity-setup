@@ -107,12 +107,38 @@ export function formatDueDate(due?: { date: string; datetime?: string; string?: 
 }
 
 // Format a task's scheduled time as "2:00 PM – 3:00 PM" or just "2:00 PM"
+// Handles both due.datetime and time parsed from due.string
 export function formatTaskTimeRange(task: FormattedTask): string {
-  if (!task.due?.datetime) return '';
-  const start = new Date(task.due.datetime);
-  const startStr = formatTime(start);
+  let startStr: string | undefined;
+  let startMs: number | undefined;
+
+  if (task.due?.datetime) {
+    const start = new Date(task.due.datetime);
+    startStr = formatTime(start);
+    startMs = start.getTime();
+  } else if (task.due?.string) {
+    // Parse time from due.string like "every day at 2pm", "today at 9:30am"
+    const m = task.due.string.match(/(\d{1,2}):(\d{2})\s*(am|pm)/i)
+      ?? task.due.string.match(/(\d{1,2})\s*(am|pm)/i);
+    if (m) {
+      let hours = parseInt(m[1], 10);
+      const minutes = m[2] && !m[2].match(/am|pm/i) ? parseInt(m[2], 10) : 0;
+      const ampm = (m[3] ?? m[2]).toLowerCase();
+      if (ampm === 'pm' && hours < 12) hours += 12;
+      if (ampm === 'am' && hours === 12) hours = 0;
+      // Build a date in the configured timezone for formatting
+      const now = new Date();
+      const tzStr = now.toLocaleDateString('en-CA', { timeZone: config.timezone });
+      const fakeDate = new Date(`${tzStr}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`);
+      startStr = formatTime(fakeDate);
+      startMs = fakeDate.getTime();
+    }
+  }
+
+  if (!startStr || startMs === undefined) return '';
+
   if (task.duration && task.durationUnit === 'minute') {
-    const end = new Date(start.getTime() + task.duration * 60_000);
+    const end = new Date(startMs + task.duration * 60_000);
     return `${startStr} – ${formatTime(end)}`;
   }
   return startStr;
