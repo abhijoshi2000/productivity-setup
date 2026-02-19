@@ -106,6 +106,18 @@ export function formatDueDate(due?: { date: string; datetime?: string; string?: 
   return formatDate(new Date(due.date));
 }
 
+// Format a task's scheduled time as "2:00 PM – 3:00 PM" or just "2:00 PM"
+export function formatTaskTimeRange(task: FormattedTask): string {
+  if (!task.due?.datetime) return '';
+  const start = new Date(task.due.datetime);
+  const startStr = formatTime(start);
+  if (task.duration && task.durationUnit === 'minute') {
+    const end = new Date(start.getTime() + task.duration * 60_000);
+    return `${startStr} – ${formatTime(end)}`;
+  }
+  return startStr;
+}
+
 export function escapeMarkdown(text: string): string {
   return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
 }
