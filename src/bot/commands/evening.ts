@@ -37,7 +37,7 @@ export async function generateEvening(): Promise<string> {
   if (completedTasks.length > 0) {
     lines.push(`✔️ *Completed Today (${completedTasks.length})*`);
     completedTasks.forEach((task, i) => {
-      lines.push(`${i + 1}. ✓ ${task.content}`);
+      lines.push(`${i + 1}. ${task.content}`);
     });
   } else {
     lines.push('✔️ *Completed Today*');

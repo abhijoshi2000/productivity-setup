@@ -59,7 +59,7 @@ export function registerTasksCommand(bot: any) {
           lines.push('');
           lines.push(`✔️ *Completed (${completedTasks.length})*`);
           completedTasks.forEach((task, i) => {
-            lines.push(`${i + 1}. ✓ ${task.content}`);
+            lines.push(`${i + 1}. ${task.content}`);
           });
         }
       }
