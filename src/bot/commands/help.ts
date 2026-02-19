@@ -15,7 +15,8 @@ _Batch: /done 1 3 5 · /reschedule 1-4 tomorrow_
 /briefing — Morning summary
 /evening — Evening wrap-up
 /free — Open calendar slots
-/timeline — Visual day timeline
+/timeline\\_today — Visual day timeline
+/timeline\\_tomorrow — Tomorrow's timeline
 
 🗓 *Calendar & Focus*
 /block — Create an event
