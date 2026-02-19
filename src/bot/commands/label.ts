@@ -2,7 +2,6 @@ import { Context } from 'telegraf';
 import { getLabels, getTasksByFilter } from '../../services/todoist';
 import { priorityEmoji, formatDueDate } from '../../services/parser';
 import { setTaskMappings, setTaskListMessageId } from '../../services/session';
-import { buildTaskKeyboard } from '../actions';
 
 export function registerLabelCommand(bot: any) {
   bot.command('label', async (ctx: Context) => {
@@ -49,18 +48,21 @@ export function registerLabelCommand(bot: any) {
         const mapping = mappings.find((m) => m.taskId === task.id);
         const idx = mapping ? `${mapping.index}.` : '•';
         const emoji = priorityEmoji(task.priority);
-        const due = task.due ? ` 📅 ${formatDueDate(task.due)}` : '';
-        const project = task.projectName ? ` _[${task.projectName}]_` : '';
-        lines.push(`${idx} ${emoji} ${task.content}${due}${project}`);
+        lines.push(`${idx} ${emoji} ${task.content}`);
+        const meta: string[] = [];
+        if (task.due) meta.push(`📅 ${formatDueDate(task.due)}`);
+        if (task.duration && task.durationUnit === 'minute') {
+          meta.push(`⏱ ${task.duration >= 60 ? `${task.duration / 60}h` : `${task.duration}m`}`);
+        }
+        if (task.projectName) meta.push(`📁 ${task.projectName}`);
+        if (meta.length > 0) lines.push(`     ${meta.join(' · ')}`);
       }
 
       lines.push('');
       lines.push('💡 Use /done, /edit, /delete etc. with task numbers');
 
-      const keyboard = buildTaskKeyboard(tasks);
       const sent = await ctx.reply(lines.join('\n'), {
         parse_mode: 'Markdown',
-        ...keyboard,
       });
       setTaskListMessageId(chatId, sent.message_id);
     } catch (error) {

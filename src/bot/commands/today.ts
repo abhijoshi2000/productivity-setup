@@ -1,5 +1,5 @@
 import { Context } from 'telegraf';
-import { getTodayTasks, getOverdueTasks } from '../../services/todoist';
+import { getTodayTasks, getOverdueTasks, getCompletedTasksToday } from '../../services/todoist';
 import { getTodayEvents } from '../../services/calendar';
 import { isCalendarConfigured, config } from '../../config';
 import { priorityEmoji, formatTime, formatDueDate, timeUntil, separateAndMergeBusy, formatMeetingBlocks, separateBirthdays, formatBirthdayLines, sortTasksByTime } from '../../services/parser';
@@ -11,10 +11,11 @@ export function registerTodayCommand(bot: any) {
     if (!chatId) return;
 
     try {
-      const [todayTasks, overdueTasks, events] = await Promise.all([
+      const [todayTasks, overdueTasks, events, completedTasks] = await Promise.all([
         getTodayTasks(),
         getOverdueTasks(),
         isCalendarConfigured() ? getTodayEvents() : Promise.resolve([]),
+        getCompletedTasksToday(),
       ]);
 
       const lines: string[] = [];
@@ -75,19 +76,32 @@ export function registerTodayCommand(bot: any) {
         sortedTodayTasks.forEach((task, i) => {
           const idx = overdueTasks.length + i + 1;
           const emoji = priorityEmoji(task.priority);
-          const due = task.due ? ` 📅 ${formatDueDate(task.due)}` : '';
-          const dur = task.duration && task.durationUnit === 'minute' ? ` ⏱ ${task.duration >= 60 ? `${task.duration / 60}h` : `${task.duration}m`}` : '';
-          const project = task.projectName ? ` · ${task.projectName}` : '';
-          lines.push(`${idx}. ${emoji} ${task.content}${due}${dur}${project}`);
+          lines.push(`${idx}. ${emoji} ${task.content}`);
+          const meta: string[] = [];
+          if (task.due) meta.push(`📅 ${formatDueDate(task.due)}`);
+          if (task.duration && task.durationUnit === 'minute') {
+            meta.push(`⏱ ${task.duration >= 60 ? `${task.duration / 60}h` : `${task.duration}m`}`);
+          }
+          if (task.projectName) meta.push(`📁 ${task.projectName}`);
+          if (meta.length > 0) lines.push(`     ${meta.join(' · ')}`);
         });
       } else {
         lines.push('✅ *Today\'s Tasks*');
         lines.push('All clear! 🎉');
       }
 
+      // Completed tasks
+      if (completedTasks.length > 0) {
+        lines.push('');
+        lines.push(`✔️ *Completed (${completedTasks.length})*`);
+        for (const task of completedTasks) {
+          lines.push(`✓ _${task.content}_ · ${task.projectName}`);
+        }
+      }
+
       const total = allTasks.length;
       lines.push('');
-      lines.push(`📊 ${total} task${total !== 1 ? 's' : ''} total`);
+      lines.push(`📊 ${total} remaining · ${completedTasks.length} done`);
 
       const sent = await ctx.reply(lines.join('\n'), {
         parse_mode: 'Markdown',

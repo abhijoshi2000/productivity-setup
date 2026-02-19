@@ -54,10 +54,14 @@ export function registerTomorrowCommand(bot: any) {
         lines.push(`✅ *Tasks (${sortedTasks.length})*`);
         for (const task of sortedTasks) {
           const emoji = priorityEmoji(task.priority);
-          const due = task.due ? ` 📅 ${formatDueDate(task.due)}` : '';
-          const dur = task.duration && task.durationUnit === 'minute' ? ` ⏱ ${task.duration >= 60 ? `${task.duration / 60}h` : `${task.duration}m`}` : '';
-          const project = task.projectName ? ` · ${task.projectName}` : '';
-          lines.push(`${emoji} ${task.content}${due}${dur}${project}`);
+          lines.push(`${emoji} ${task.content}`);
+          const meta: string[] = [];
+          if (task.due) meta.push(`📅 ${formatDueDate(task.due)}`);
+          if (task.duration && task.durationUnit === 'minute') {
+            meta.push(`⏱ ${task.duration >= 60 ? `${task.duration / 60}h` : `${task.duration}m`}`);
+          }
+          if (task.projectName) meta.push(`📁 ${task.projectName}`);
+          if (meta.length > 0) lines.push(`     ${meta.join(' · ')}`);
         }
       } else {
         lines.push('✅ *Tasks*');

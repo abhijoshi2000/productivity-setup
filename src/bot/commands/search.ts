@@ -48,9 +48,11 @@ export function registerSearchCommand(bot: any) {
         const mapping = mappings.find((m) => m.taskId === task.id);
         const idx = mapping ? `${mapping.index}.` : '•';
         const emoji = priorityEmoji(task.priority);
-        const due = task.due ? ` 📅 ${formatDueDate(task.due)}` : '';
-        const project = task.projectName ? ` _[${task.projectName}]_` : '';
-        lines.push(`${idx} ${emoji} ${task.content}${due}${project}`);
+        lines.push(`${idx} ${emoji} ${task.content}`);
+        const meta: string[] = [];
+        if (task.due) meta.push(`📅 ${formatDueDate(task.due)}`);
+        if (task.projectName) meta.push(`📁 ${task.projectName}`);
+        if (meta.length > 0) lines.push(`     ${meta.join(' · ')}`);
       }
 
       if (matches.length > 15) {

@@ -2,7 +2,7 @@ import { Context } from 'telegraf';
 import { getWeekTasks } from '../../services/todoist';
 import { getWeekEvents, startOfDayInTz } from '../../services/calendar';
 import { isCalendarConfigured, config } from '../../config';
-import { priorityEmoji, formatTime, formatDate, separateAndMergeBusy, formatMeetingBlocks, separateBirthdays, sortTasksByTime } from '../../services/parser';
+import { priorityEmoji, formatTime, formatDate, formatDueDate, separateAndMergeBusy, formatMeetingBlocks, separateBirthdays, sortTasksByTime } from '../../services/parser';
 import { CalendarEvent, FormattedTask } from '../../types';
 
 function dateKey(date: Date): string {
@@ -81,8 +81,11 @@ export function registerWeekCommand(bot: any) {
           }
           for (const task of sortTasksByTime(dayTasks)) {
             const emoji = priorityEmoji(task.priority);
-            const project = task.projectName ? ` · ${task.projectName}` : '';
-            lines.push(`${emoji} ${task.content}${project}`);
+            lines.push(`${emoji} ${task.content}`);
+            const meta: string[] = [];
+            if (task.due?.datetime || task.due?.string) meta.push(`📅 ${formatDueDate(task.due)}`);
+            if (task.projectName) meta.push(`📁 ${task.projectName}`);
+            if (meta.length > 0) lines.push(`     ${meta.join(' · ')}`);
           }
         }
 
