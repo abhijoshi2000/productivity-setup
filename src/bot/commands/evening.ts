@@ -1,5 +1,5 @@
 import { Context } from 'telegraf';
-import { getOverdueTasks, getTomorrowTasks, getProductivityStats } from '../../services/todoist';
+import { getOverdueTasks, getTomorrowTasks, getProductivityStats, getCompletedTasksToday } from '../../services/todoist';
 import { getTomorrowEvents } from '../../services/calendar';
 import { isCalendarConfigured, config } from '../../config';
 import {
@@ -12,11 +12,12 @@ import {
 } from '../../services/parser';
 
 export async function generateEvening(): Promise<string> {
-  const [overdueTasks, tomorrowTasks, tomorrowEvents, stats] = await Promise.all([
+  const [overdueTasks, tomorrowTasks, tomorrowEvents, stats, completedTasks] = await Promise.all([
     getOverdueTasks(),
     getTomorrowTasks(),
     isCalendarConfigured() ? getTomorrowEvents() : Promise.resolve([]),
     getProductivityStats(),
+    getCompletedTasksToday(),
   ]);
 
   const now = new Date();
@@ -32,10 +33,16 @@ export async function generateEvening(): Promise<string> {
   lines.push(`📅 ${dateStr}`);
   lines.push('');
 
-  // Today's progress
-  const dailyBar = progressBar(stats.completedToday, stats.dailyGoal, 8);
-  lines.push('📊 *Today\'s Progress*');
-  lines.push(`${dailyBar} ${stats.completedToday}/${stats.dailyGoal} completed`);
+  // Today's completed tasks
+  if (completedTasks.length > 0) {
+    lines.push(`✔️ *Completed Today (${completedTasks.length})*`);
+    for (const task of completedTasks) {
+      lines.push(`✓ _${task.content}_ · ${task.projectName}`);
+    }
+  } else {
+    lines.push('✔️ *Completed Today*');
+    lines.push('No tasks completed today');
+  }
   lines.push('');
 
   // Rolling over: overdue tasks
