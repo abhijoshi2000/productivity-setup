@@ -50,8 +50,8 @@ export function registerSearchCommand(bot: any) {
         const emoji = priorityEmoji(task.priority);
         lines.push(`${idx} ${emoji} ${task.content}`);
         const meta: string[] = [];
-        if (task.due) meta.push(`📅 ${formatDueDate(task.due)}`);
-        if (task.projectName) meta.push(`📁 ${task.projectName}`);
+        if (task.due) meta.push(formatDueDate(task.due));
+        if (task.projectName) meta.push(task.projectName);
         if (meta.length > 0) lines.push(`     ${meta.join(' · ')}`);
       }
 

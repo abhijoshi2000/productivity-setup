@@ -78,11 +78,11 @@ export function registerTodayCommand(bot: any) {
           const emoji = priorityEmoji(task.priority);
           lines.push(`${idx}. ${emoji} ${task.content}`);
           const meta: string[] = [];
-          if (task.due) meta.push(`📅 ${formatDueDate(task.due)}`);
+          if (task.due && (task.due.datetime || task.due.string)) meta.push(formatDueDate(task.due));
           if (task.duration && task.durationUnit === 'minute') {
-            meta.push(`⏱ ${task.duration >= 60 ? `${task.duration / 60}h` : `${task.duration}m`}`);
+            meta.push(task.duration >= 60 ? `${task.duration / 60}h` : `${task.duration}m`);
           }
-          if (task.projectName) meta.push(`📁 ${task.projectName}`);
+          if (task.projectName) meta.push(task.projectName);
           if (meta.length > 0) lines.push(`     ${meta.join(' · ')}`);
         });
       } else {

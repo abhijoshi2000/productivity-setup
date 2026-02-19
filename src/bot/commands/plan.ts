@@ -30,7 +30,7 @@ export function showPlanTask(tasks: FormattedTask[], index: number): { text: str
   const task = tasks[index];
   const emoji = priorityEmoji(task.priority);
   const dur = task.duration ? ` (${task.duration}min)` : '';
-  const project = task.projectName ? `\n📁 ${task.projectName}` : '';
+  const project = task.projectName ? `\n${task.projectName}` : '';
 
   const text = `🧠 *Planning — Task ${index + 1} of ${tasks.length}*\n\n${emoji} ${task.content}${dur}${project}\n\n_Reply with a time like "2pm for 1h" or "2pm-3pm" or tap a button:_`;
   return { text, taskId: task.id };

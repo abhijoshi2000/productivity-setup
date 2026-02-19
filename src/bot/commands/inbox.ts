@@ -21,7 +21,7 @@ export function showInboxTask(tasks: { id: string; content: string; priority: nu
   if (index >= tasks.length) return null;
   const task = tasks[index];
   const emoji = priorityEmoji(task.priority);
-  const due = task.due ? `\n📅 ${formatDueDate(task.due)}` : '';
+  const due = task.due ? `\nDue: ${formatDueDate(task.due)}` : '';
   const desc = task.description ? `\n📄 ${task.description}` : '';
   const labels = task.labels.length > 0 ? `\n🏷 ${task.labels.map((l) => `@${l}`).join(' ')}` : '';
 

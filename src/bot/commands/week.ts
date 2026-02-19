@@ -83,8 +83,8 @@ export function registerWeekCommand(bot: any) {
             const emoji = priorityEmoji(task.priority);
             lines.push(`${emoji} ${task.content}`);
             const meta: string[] = [];
-            if (task.due?.datetime || task.due?.string) meta.push(`📅 ${formatDueDate(task.due)}`);
-            if (task.projectName) meta.push(`📁 ${task.projectName}`);
+            if (task.due?.datetime || task.due?.string) meta.push(formatDueDate(task.due));
+            if (task.projectName) meta.push(task.projectName);
             if (meta.length > 0) lines.push(`     ${meta.join(' · ')}`);
           }
         }

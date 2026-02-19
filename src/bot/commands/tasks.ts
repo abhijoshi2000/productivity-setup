@@ -52,11 +52,11 @@ export function registerTasksCommand(bot: any) {
 
         // Metadata line
         const meta: string[] = [];
-        if (task.due) meta.push(`📅 ${formatDueDate(task.due)}`);
+        if (task.due) meta.push(formatDueDate(task.due));
         if (task.duration && task.durationUnit === 'minute') {
-          meta.push(`⏱ ${task.duration >= 60 ? `${task.duration / 60}h` : `${task.duration}m`}`);
+          meta.push(task.duration >= 60 ? `${task.duration / 60}h` : `${task.duration}m`);
         }
-        if (task.projectName) meta.push(`📁 ${task.projectName}`);
+        if (task.projectName) meta.push(task.projectName);
         if (task.labels.length > 0) meta.push(task.labels.map((l) => `@${l}`).join(' '));
         if (meta.length > 0) {
           lines.push(`     ${meta.join(' · ')}`);

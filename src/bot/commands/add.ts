@@ -232,9 +232,9 @@ async function addTask(ctx: Context, text: string) {
           string: result.due.string ?? undefined,
         }
       : undefined;
-    const due = dueInfo ? `\n📅 ${formatDueDate(dueInfo)}` : '';
+    const due = dueInfo ? `\n${formatDueDate(dueInfo)}` : '';
     const durationDisplay = durationMinutes
-      ? `\n⏱ ${durationMinutes >= 60 ? `${durationMinutes / 60} hour${durationMinutes / 60 !== 1 ? 's' : ''}` : `${durationMinutes} min`}`
+      ? `\n${durationMinutes >= 60 ? `${durationMinutes / 60} hour${durationMinutes / 60 !== 1 ? 's' : ''}` : `${durationMinutes} min`}`
       : '';
 
     await ctx.reply(

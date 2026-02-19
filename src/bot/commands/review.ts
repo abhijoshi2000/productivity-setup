@@ -42,7 +42,7 @@ export function registerReviewCommand(bot: any) {
         lines.push(`📋 *Coming Up (${weekTasks.length})*`);
         for (const task of weekTasks.slice(0, 5)) {
           const emoji = priorityEmoji(task.priority);
-          const due = task.due ? ` 📅 ${formatDueDate(task.due)}` : '';
+          const due = task.due ? ` · ${formatDueDate(task.due)}` : '';
           lines.push(`${emoji} ${task.content}${due}`);
         }
         if (weekTasks.length > 5) {
