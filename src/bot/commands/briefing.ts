@@ -13,6 +13,7 @@ import {
   formatMeetingBlocks,
   separateBirthdays,
   formatBirthdayLines,
+  sortTasksByTime,
 } from '../../services/parser';
 
 // Generate briefing text (reusable by cron and command)
@@ -70,10 +71,11 @@ export async function generateBriefing(): Promise<string> {
     lines.push('');
   }
 
-  // Today's tasks
-  lines.push(`✅ *Today's Tasks (${todayTasks.length})*`);
-  if (todayTasks.length > 0) {
-    for (const task of todayTasks) {
+  // Today's tasks — sorted by start time
+  const sortedTodayTasks = sortTasksByTime(todayTasks);
+  lines.push(`✅ *Today's Tasks (${sortedTodayTasks.length})*`);
+  if (sortedTodayTasks.length > 0) {
+    for (const task of sortedTodayTasks) {
       const emoji = priorityEmoji(task.priority);
       const due = task.due?.datetime ? ` _(${formatDueDate(task.due)})_` : '';
       lines.push(`${emoji} ${task.content}${due}`);

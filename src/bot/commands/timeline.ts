@@ -1,6 +1,6 @@
 import { Context } from 'telegraf';
-import { getTodayTasks, getOverdueTasks, getTomorrowTasks, getCompletedTasksToday } from '../../services/todoist';
-import { getTodayEvents, getTomorrowEvents } from '../../services/calendar';
+import { getTodayTasks, getOverdueTasks, getCompletedTasksToday } from '../../services/todoist';
+import { getTodayEvents } from '../../services/calendar';
 import { isCalendarConfigured, config } from '../../config';
 import { generateTimelineImage } from '../../services/timeline';
 
@@ -38,40 +38,10 @@ export async function generateTimelineBuffer(): Promise<Buffer> {
   return generateTimelineImage(todayTasks, overdueTasks, events, dateLabel, completedTasks);
 }
 
-export async function generateTomorrowTimelineBuffer(): Promise<Buffer> {
-  const [tasks, events] = await Promise.all([
-    getTomorrowTasks(),
-    isCalendarConfigured() ? getTomorrowEvents() : Promise.resolve([]),
-  ]);
-
-  console.log(`Timeline tomorrow — Tasks: ${tasks.length}, Events: ${events.length}`);
-
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const dateLabel = tomorrow.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    timeZone: config.timezone,
-  });
-
-  return generateTimelineImage(tasks, [], events, dateLabel);
-}
-
 export function registerTimelineCommand(bot: any) {
-  bot.command('timeline_today', async (ctx: Context) => {
+  bot.command('timeline', async (ctx: Context) => {
     try {
       const buffer = await generateTimelineBuffer();
-      await ctx.replyWithPhoto({ source: buffer, filename: 'timeline.png' });
-    } catch (error) {
-      console.error('Failed to generate timeline:', error);
-      await ctx.reply('❌ Failed to generate timeline. Please try again.');
-    }
-  });
-
-  bot.command('timeline_tomorrow', async (ctx: Context) => {
-    try {
-      const buffer = await generateTomorrowTimelineBuffer();
       await ctx.replyWithPhoto({ source: buffer, filename: 'timeline.png' });
     } catch (error) {
       console.error('Failed to generate timeline:', error);

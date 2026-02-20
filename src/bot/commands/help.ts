@@ -16,7 +16,7 @@ _Batch: /done 1 3 5 · /snooze 1 3 5 tomorrow_
 /briefing — Morning summary
 /evening — Evening wrap-up
 /free — Open calendar slots
-/timeline\\_today · /timeline\\_tomorrow
+/timeline — Visual day timeline
 
 🧠 *Workflow*
 /inbox — Triage inbox tasks
