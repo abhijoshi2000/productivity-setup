@@ -222,18 +222,113 @@ export function parseDurationToMinutes(input: string): number | null {
   return null;
 }
 
+// Natural language duration map
+const NATURAL_DURATIONS: Record<string, number> = {
+  'an hour': 60,
+  'half an hour': 30,
+  'a half hour': 30,
+  'half hour': 30,
+  'quarter hour': 15,
+  'quarter of an hour': 15,
+};
+
+// Extract duration from task text, handling multiple patterns.
+// Returns the parsed duration in minutes and the text with the duration stripped.
+export function extractDuration(text: string): { durationMinutes: number; cleanedText: string } | null {
+  let taskText = text;
+
+  // 1. Time range: "2pm-3pm", "2pm to 3pm", "2:30pm – 4pm"
+  //    Also handles partial meridiem: "2-4pm" (both inferred pm), "2pm-4" (end inferred same meridiem)
+  const rangeMatch = taskText.match(/(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:to|-|–)\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i);
+  if (rangeMatch) {
+    let startStr = rangeMatch[1].trim();
+    let endStr = rangeMatch[2].trim();
+
+    // At least one side must have am/pm to distinguish from dates like "2-4" (Feb 4)
+    const startHasMeridiem = /(?:am|pm)$/i.test(startStr);
+    const endHasMeridiem = /(?:am|pm)$/i.test(endStr);
+
+    if (startHasMeridiem || endHasMeridiem) {
+      // Infer missing meridiem from the other side
+      if (!startHasMeridiem && endHasMeridiem) {
+        const meridiem = endStr.match(/am|pm$/i)![0];
+        startStr = startStr + meridiem;
+      } else if (startHasMeridiem && !endHasMeridiem) {
+        const meridiem = startStr.match(/am|pm$/i)![0];
+        endStr = endStr + meridiem;
+      }
+
+      const startMin = parseTimeToMinutes(startStr);
+      const endMin = parseTimeToMinutes(endStr);
+      if (startMin !== null && endMin !== null && endMin > startMin) {
+        // Replace range with just the start time (with meridiem) so Todoist NLP gets the start
+        const cleanedText = taskText.replace(rangeMatch[0], startStr).replace(/\s{2,}/g, ' ').trim();
+        return { durationMinutes: endMin - startMin, cleanedText };
+      }
+    }
+  }
+
+  // 2. "for" + natural language duration: "for an hour", "for half an hour", etc.
+  for (const [phrase, minutes] of Object.entries(NATURAL_DURATIONS)) {
+    const re = new RegExp(`\\bfor\\s+${phrase}\\b`, 'i');
+    const m = taskText.match(re);
+    if (m) {
+      const cleanedText = taskText.replace(m[0], '').replace(/\s{2,}/g, ' ').trim();
+      return { durationMinutes: minutes, cleanedText };
+    }
+  }
+
+  // 3. "for" + numeric duration: "for 1h", "for 90m", "for 1.5h", "for 1h30m"
+  const forDurMatch = taskText.match(/\bfor\s+(\d+(?:\.\d+)?\s*(?:hours?|hrs?|h)\s*\d+\s*(?:minutes?|mins?|m)?|\d+(?:\.\d+)?\s*(?:hours?|hrs?|h|minutes?|mins?|m))\b/i);
+  if (forDurMatch) {
+    const parsed = parseDurationToMinutes(forDurMatch[1]);
+    if (parsed) {
+      const cleanedText = taskText.replace(forDurMatch[0], '').replace(/\s{2,}/g, ' ').trim();
+      return { durationMinutes: parsed, cleanedText };
+    }
+  }
+
+  // 4. Bare duration immediately after a time: "2pm 1h", "9am 45min", "2:30pm 1h30m"
+  const bareDurMatch = taskText.match(/(\d{1,2}(?::\d{2})?\s*(?:am|pm))\s+(\d+(?:\.\d+)?\s*(?:hours?|hrs?|h)\s*\d+\s*(?:minutes?|mins?|m)?|\d+(?:\.\d+)?\s*(?:hours?|hrs?|h|minutes?|mins?|m))\b/i);
+  if (bareDurMatch) {
+    // Verify the first group is a valid time
+    const timeCheck = parseTimeToMinutes(bareDurMatch[1]);
+    if (timeCheck !== null) {
+      const parsed = parseDurationToMinutes(bareDurMatch[2]);
+      if (parsed) {
+        // Strip only the duration part, keep the time
+        const cleanedText = taskText.replace(bareDurMatch[0], bareDurMatch[1].trim()).replace(/\s{2,}/g, ' ').trim();
+        return { durationMinutes: parsed, cleanedText };
+      }
+    }
+  }
+
+  return null;
+}
+
 // Parse time range or time+duration: "2pm-3pm", "2pm 1h", "2pm for 1h"
 // Returns { startTime: string, durationMin: number | undefined }
 export function parseTimeBlock(input: string): { startTime: string; durationMin?: number } | null {
   const trimmed = input.trim();
 
-  // Try time range: "2pm-3pm", "2:30pm to 4pm", "2pm – 3:30pm"
+  // Try time range: "2pm-3pm", "2:30pm to 4pm", "2pm – 3:30pm", "2-4pm"
   const rangeMatch = trimmed.match(/^(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:to|-|–)\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)$/i);
   if (rangeMatch) {
-    const startMin = parseTimeToMinutes(rangeMatch[1]);
-    const endMin = parseTimeToMinutes(rangeMatch[2]);
-    if (startMin !== null && endMin !== null && endMin > startMin) {
-      return { startTime: rangeMatch[1].trim(), durationMin: endMin - startMin };
+    let startStr = rangeMatch[1].trim();
+    let endStr = rangeMatch[2].trim();
+    const startHasMeridiem = /(?:am|pm)$/i.test(startStr);
+    const endHasMeridiem = /(?:am|pm)$/i.test(endStr);
+    if (startHasMeridiem || endHasMeridiem) {
+      if (!startHasMeridiem && endHasMeridiem) {
+        startStr = startStr + endStr.match(/am|pm$/i)![0];
+      } else if (startHasMeridiem && !endHasMeridiem) {
+        endStr = endStr + startStr.match(/am|pm$/i)![0];
+      }
+      const startMin = parseTimeToMinutes(startStr);
+      const endMin = parseTimeToMinutes(endStr);
+      if (startMin !== null && endMin !== null && endMin > startMin) {
+        return { startTime: startStr, durationMin: endMin - startMin };
+      }
     }
   }
 

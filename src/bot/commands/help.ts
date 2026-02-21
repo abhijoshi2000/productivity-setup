@@ -21,6 +21,7 @@ _Batch: /done 1 3 5 · /snooze 1 3 5 tomorrow_
 🧠 *Workflow*
 /inbox — Triage inbox tasks
 /plan — Plan your day
+/week\\_plan — Plan your week interactively
 /label — Filter by label
 
 🗓 *Calendar & Focus*

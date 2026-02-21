@@ -10,6 +10,18 @@ export interface TaskMapping {
   content: string;
 }
 
+export interface FreeSlot {
+  start: Date;
+  end: Date;
+  minutes: number;
+}
+
+export interface WeekPlanDaySlots {
+  dayLabel: string;
+  date: string; // YYYY-MM-DD
+  slots: FreeSlot[];
+}
+
 export interface SessionData {
   taskMappings: TaskMapping[];
   lastCommand: string;
@@ -19,7 +31,10 @@ export interface SessionData {
   focusTimer?: FocusTimer;
   inboxQueue?: { tasks: FormattedTask[]; index: number };
   planQueue?: { tasks: FormattedTask[]; index: number };
-  pendingAction?: { type: 'inbox_schedule' | 'inbox_move' | 'plan_timeblock'; taskId: string };
+  weekPlanQueue?: { tasks: FormattedTask[]; index: number };
+  weekPlanFreeSlots?: WeekPlanDaySlots[];
+  weekPlanSelectedDay?: number;
+  pendingAction?: { type: 'inbox_schedule' | 'inbox_move' | 'plan_timeblock' | 'weekplan_time' | 'weekplan_duration'; taskId: string };
 }
 
 export interface CalendarEvent {

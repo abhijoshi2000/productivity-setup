@@ -3,7 +3,9 @@ import { completeTask, rescheduleTask, getTask, deleteTask, moveTaskToProject, g
 import { pushUndoAction, getSession } from '../services/session';
 import { showInboxTask, buildInboxKeyboard } from './commands/inbox';
 import { showPlanTask, buildPlanKeyboard } from './commands/plan';
-import { parseTimeBlock } from '../services/parser';
+import { showWeekPlanTask, showDaySlots, buildDurationKeyboard } from './commands/week-plan';
+import { parseTimeBlock, parseTimeToMinutes, parseDurationToMinutes, formatMinutesToTime } from '../services/parser';
+import { formatSlotDuration } from '../services/calendar';
 import { generateTimelineBuffer } from './commands/timeline';
 
 export function registerActionHandlers(bot: any) {
@@ -190,6 +192,169 @@ export function registerActionHandlers(bot: any) {
       await ctx.answerCbQuery('❌ Failed');
     }
   });
+
+  // --- Week Plan action handlers ---
+
+  bot.action(/^weekplan_day:(\d+)$/, async (ctx: any) => {
+    const dayIndex = parseInt(ctx.match[1], 10);
+    const chatId = ctx.chat?.id;
+    if (!chatId) return;
+    try {
+      await ctx.answerCbQuery();
+      showDaySlots(ctx, chatId, dayIndex);
+    } catch (error) {
+      console.error('weekplan_day failed:', error);
+      await ctx.answerCbQuery('❌ Failed');
+    }
+  });
+
+  bot.action(/^weekplan_slot:(\d+):(\d+)$/, async (ctx: any) => {
+    const dayIndex = parseInt(ctx.match[1], 10);
+    const slotIndex = parseInt(ctx.match[2], 10);
+    const chatId = ctx.chat?.id;
+    if (!chatId) return;
+    try {
+      await ctx.answerCbQuery();
+      const session = getSession(chatId);
+      if (!session.weekPlanQueue || !session.weekPlanFreeSlots) return;
+
+      const day = session.weekPlanFreeSlots[dayIndex];
+      const slot = day?.slots[slotIndex];
+      const task = session.weekPlanQueue.tasks[session.weekPlanQueue.index];
+      if (!day || !slot || !task) return;
+
+      // Reschedule to this day + slot start time
+      const timeStr = slot.start.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'America/New_York',
+      });
+      await rescheduleTask(task.id, `${day.date} at ${timeStr}`);
+
+      if (task.duration) {
+        // Task already has duration — use it, auto-fit
+        await updateTaskDuration(task.id, task.duration, 'minute');
+        await ctx.reply(`🕐 Scheduled *${task.content}* → ${day.dayLabel} at ${timeStr} (${task.duration}min)`, { parse_mode: 'Markdown' });
+        // Subtract from free slots
+        subtractFromSlots(session.weekPlanFreeSlots, dayIndex, slotIndex, task.duration);
+        await advanceWeekPlan(ctx, chatId);
+      } else {
+        // Ask for duration
+        session.weekPlanSelectedDay = dayIndex;
+        // Store the slot info for after duration is picked
+        session.pendingAction = { type: 'weekplan_duration', taskId: task.id };
+        const keyboard = buildDurationKeyboard(task.id);
+        await ctx.reply(`⏱ How long is *${task.content}*?`, { parse_mode: 'Markdown', ...keyboard });
+      }
+    } catch (error) {
+      console.error('weekplan_slot failed:', error);
+      await ctx.answerCbQuery('❌ Failed');
+    }
+  });
+
+  bot.action(/^weekplan_duration:(\d+)$/, async (ctx: any) => {
+    const minutes = parseInt(ctx.match[1], 10);
+    const chatId = ctx.chat?.id;
+    if (!chatId) return;
+    try {
+      await ctx.answerCbQuery();
+      const session = getSession(chatId);
+      if (!session.weekPlanQueue) return;
+
+      const task = session.weekPlanQueue.tasks[session.weekPlanQueue.index];
+      if (!task) return;
+
+      await updateTaskDuration(task.id, minutes, 'minute');
+      await ctx.reply(`⏱ Duration set: ${formatSlotDuration(minutes)}`);
+
+      // Subtract from free slots
+      if (session.weekPlanFreeSlots && session.weekPlanSelectedDay !== undefined) {
+        // Find the slot that was used (approximate — use the first slot that fits)
+        const day = session.weekPlanFreeSlots[session.weekPlanSelectedDay];
+        if (day) {
+          const slotIdx = day.slots.findIndex((s) => s.minutes >= minutes);
+          if (slotIdx >= 0) subtractFromSlots(session.weekPlanFreeSlots, session.weekPlanSelectedDay, slotIdx, minutes);
+        }
+      }
+
+      session.pendingAction = undefined;
+      await advanceWeekPlan(ctx, chatId);
+    } catch (error) {
+      console.error('weekplan_duration failed:', error);
+      await ctx.answerCbQuery('❌ Failed');
+    }
+  });
+
+  bot.action(/^weekplan_custom_time:(.+)$/, async (ctx: any) => {
+    const taskId = ctx.match[1];
+    const chatId = ctx.chat?.id;
+    if (!chatId) return;
+    try {
+      await ctx.answerCbQuery();
+      const session = getSession(chatId);
+      session.pendingAction = { type: 'weekplan_time', taskId };
+      await ctx.reply('🕐 Reply with a time (e.g. "2pm", "2pm for 1h", "2pm-3pm"):');
+    } catch (error) {
+      console.error('weekplan_custom_time failed:', error);
+      await ctx.answerCbQuery('❌ Failed');
+    }
+  });
+
+  bot.action(/^weekplan_custom_duration:(.+)$/, async (ctx: any) => {
+    const taskId = ctx.match[1];
+    const chatId = ctx.chat?.id;
+    if (!chatId) return;
+    try {
+      await ctx.answerCbQuery();
+      const session = getSession(chatId);
+      session.pendingAction = { type: 'weekplan_duration', taskId };
+      await ctx.reply('⏱ Reply with a duration (e.g. "1h", "45min", "1h30m"):');
+    } catch (error) {
+      console.error('weekplan_custom_duration failed:', error);
+      await ctx.answerCbQuery('❌ Failed');
+    }
+  });
+
+  bot.action('weekplan_skip', async (ctx: any) => {
+    const chatId = ctx.chat?.id;
+    if (!chatId) return;
+    try {
+      await ctx.answerCbQuery('⏭ Skipped');
+      await advanceWeekPlan(ctx, chatId);
+    } catch (error) {
+      console.error('weekplan_skip failed:', error);
+      await ctx.answerCbQuery('❌ Failed');
+    }
+  });
+
+  bot.action('weekplan_done', async (ctx: any) => {
+    const chatId = ctx.chat?.id;
+    if (!chatId) return;
+    try {
+      await ctx.answerCbQuery('✅ Done');
+      const session = getSession(chatId);
+      session.weekPlanQueue = undefined;
+      session.weekPlanFreeSlots = undefined;
+      session.weekPlanSelectedDay = undefined;
+      await ctx.reply('🗓 Week planning complete! 🎉');
+    } catch (error) {
+      console.error('weekplan_done failed:', error);
+      await ctx.answerCbQuery('❌ Failed');
+    }
+  });
+
+  bot.action('weekplan_back_days', async (ctx: any) => {
+    const chatId = ctx.chat?.id;
+    if (!chatId) return;
+    try {
+      await ctx.answerCbQuery();
+      await showWeekPlanTask(ctx, chatId);
+    } catch (error) {
+      console.error('weekplan_back_days failed:', error);
+      await ctx.answerCbQuery('❌ Failed');
+    }
+  });
 }
 
 async function advanceInbox(ctx: any, chatId: number) {
@@ -232,7 +397,35 @@ async function advancePlan(ctx: any, chatId: number) {
   await ctx.reply(display.text, { parse_mode: 'Markdown', ...keyboard });
 }
 
-// Handle pending actions from inbox/plan (called from text handler in add.ts)
+async function advanceWeekPlan(ctx: any, chatId: number) {
+  const session = getSession(chatId);
+  if (!session.weekPlanQueue) return;
+
+  session.weekPlanQueue.index++;
+  session.weekPlanSelectedDay = undefined;
+  session.pendingAction = undefined;
+  await showWeekPlanTask(ctx, chatId);
+}
+
+function subtractFromSlots(daySlots: import('../types').WeekPlanDaySlots[], dayIndex: number, slotIndex: number, minutes: number) {
+  const day = daySlots[dayIndex];
+  if (!day) return;
+  const slot = day.slots[slotIndex];
+  if (!slot) return;
+
+  // Shrink the slot by moving the start forward
+  const usedMs = minutes * 60_000;
+  const newStart = new Date(slot.start.getTime() + usedMs);
+  if (newStart >= slot.end) {
+    // Slot fully consumed — remove it
+    day.slots.splice(slotIndex, 1);
+  } else {
+    slot.start = newStart;
+    slot.minutes = Math.round((slot.end.getTime() - newStart.getTime()) / 60_000);
+  }
+}
+
+// Handle pending actions from inbox/plan/week-plan (called from text handler in add.ts)
 export async function handlePendingAction(ctx: any, chatId: number, text: string): Promise<boolean> {
   const session = getSession(chatId);
   if (!session.pendingAction) return false;
@@ -262,6 +455,41 @@ export async function handlePendingAction(ctx: any, chatId: number, text: string
       const durStr = block.durationMin ? ` (${block.durationMin}min)` : '';
       await ctx.reply(`🕐 Scheduled → ${block.startTime}${durStr}`);
       await advancePlan(ctx, chatId);
+      return true;
+    }
+
+    if (type === 'weekplan_time') {
+      const block = parseTimeBlock(text.trim());
+      if (!block) {
+        await ctx.reply('❌ Could not parse time. Try: "2pm", "2pm for 1h", or "2pm-3pm"');
+        session.pendingAction = { type, taskId };
+        return true;
+      }
+      const day = session.weekPlanSelectedDay !== undefined
+        ? session.weekPlanFreeSlots?.[session.weekPlanSelectedDay]
+        : undefined;
+      const dateStr = day?.date ?? 'today';
+      await rescheduleTask(taskId, `${dateStr} at ${block.startTime}`);
+      if (block.durationMin) {
+        await updateTaskDuration(taskId, block.durationMin, 'minute');
+        await ctx.reply(`🕐 Scheduled → ${block.startTime} (${formatSlotDuration(block.durationMin)})`);
+      } else {
+        await ctx.reply(`🕐 Scheduled → ${block.startTime}`);
+      }
+      await advanceWeekPlan(ctx, chatId);
+      return true;
+    }
+
+    if (type === 'weekplan_duration') {
+      const parsed = parseDurationToMinutes(text.trim());
+      if (!parsed) {
+        await ctx.reply('❌ Could not parse duration. Try: "1h", "45min", "1h30m"');
+        session.pendingAction = { type, taskId };
+        return true;
+      }
+      await updateTaskDuration(taskId, parsed, 'minute');
+      await ctx.reply(`⏱ Duration set: ${formatSlotDuration(parsed)}`);
+      await advanceWeekPlan(ctx, chatId);
       return true;
     }
   } catch (error) {

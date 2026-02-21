@@ -71,6 +71,11 @@ export async function getWeekTasks(): Promise<FormattedTask[]> {
   return getTasksByFilter('7 days');
 }
 
+// Get tasks with no due date
+export async function getUndatedTasks(): Promise<FormattedTask[]> {
+  return getTasksByFilter('no date');
+}
+
 // Complete a task
 export async function completeTask(taskId: string): Promise<void> {
   await api.closeTask(taskId);

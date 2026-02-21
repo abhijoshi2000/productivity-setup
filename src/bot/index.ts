@@ -30,6 +30,7 @@ import { registerLabelCommand } from './commands/label';
 import { registerSnoozeCommand } from './commands/snooze';
 import { registerInboxCommand } from './commands/inbox';
 import { registerPlanCommand } from './commands/plan';
+import { registerWeekPlanCommand } from './commands/week-plan';
 
 export function createBot(): Telegraf {
   const bot = new Telegraf(config.telegram.botToken);
@@ -68,6 +69,7 @@ export function createBot(): Telegraf {
   registerSnoozeCommand(bot);
   registerInboxCommand(bot);
   registerPlanCommand(bot);
+  registerWeekPlanCommand(bot);
 
   // Add command + plain-text handler registered last
   registerAddCommand(bot);
