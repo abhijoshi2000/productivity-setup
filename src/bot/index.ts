@@ -23,6 +23,7 @@ import { registerBlockCommand } from './commands/block';
 import { registerFocusCommand } from './commands/focus';
 import { registerWeekRecapCommand } from './commands/week-recap';
 import { registerTimelineCommand } from './commands/timeline';
+import { registerNewsCommand } from './commands/news';
 import { registerEditCommand } from './commands/edit';
 import { registerDeleteCommand } from './commands/delete';
 import { registerMoveCommand } from './commands/move';
@@ -62,6 +63,7 @@ export function createBot(): Telegraf {
   registerFocusCommand(bot);
   registerWeekRecapCommand(bot);
   registerTimelineCommand(bot);
+  registerNewsCommand(bot);
   registerEditCommand(bot);
   registerDeleteCommand(bot);
   registerMoveCommand(bot);

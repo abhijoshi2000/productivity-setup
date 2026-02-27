@@ -119,6 +119,12 @@ export interface CompletedTask {
   durationUnit?: 'minute' | 'day';
 }
 
+export interface NewsDigest {
+  summary: string;
+  headlineCount: number;
+  cachedAt: number;
+}
+
 // Feature 8: Focus Timer
 export interface FocusTimer {
   taskDescription: string;

@@ -30,6 +30,9 @@ export const config = {
       .filter(Boolean),
     writableCalendarId: optionalEnv('GOOGLE_WRITABLE_CALENDAR_ID', ''),
   },
+  ai: {
+    apiKey: optionalEnv('GOOGLE_AI_API_KEY', ''),
+  },
   webhook: {
     url: optionalEnv('WEBHOOK_URL', ''),
     port: parseInt(optionalEnv('WEBHOOK_PORT', '3000'), 10),
@@ -48,4 +51,6 @@ export const isCalendarConfigured = (): boolean =>
 
 export const isCalendarWriteConfigured = (): boolean =>
   isCalendarConfigured() && !!config.google.writableCalendarId;
+
+export const isNewsConfigured = (): boolean => !!config.ai.apiKey;
 

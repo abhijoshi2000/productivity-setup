@@ -17,6 +17,7 @@ _Batch: /done 1 3 5 · /snooze 1 3 5 tomorrow_
 /evening — Evening wrap-up
 /free — Open calendar slots
 /timeline — Visual day timeline
+/news — Top news digest
 
 🧠 *Workflow*
 /inbox — Triage inbox tasks
