@@ -7,26 +7,39 @@ const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 const RSS_URL = 'https://news.google.com/rss';
 const MAX_HEADLINES = 10;
 
+interface Headline {
+  title: string;
+  link: string;
+}
+
 let cachedDigest: NewsDigest | null = null;
 
 const parser = new Parser();
 
-async function fetchHeadlines(): Promise<string[]> {
+async function fetchHeadlines(): Promise<Headline[]> {
   const feed = await parser.parseURL(RSS_URL);
   return feed.items
     .slice(0, MAX_HEADLINES)
-    .map((item) => item.title ?? '')
-    .filter(Boolean);
+    .filter((item) => item.title)
+    .map((item) => ({ title: item.title!, link: item.link ?? '' }));
 }
 
-async function summarizeHeadlines(headlines: string[]): Promise<string> {
+async function summarizeHeadlines(headlines: Headline[]): Promise<string> {
   const genAI = new GoogleGenerativeAI(config.ai.apiKey);
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-  const prompt = `Summarize these news headlines into a concise 2-3 sentence digest. Be factual and neutral. Write flowing prose, no bullet points or preamble.\n\n${headlines.join('\n')}`;
+  const numbered = headlines.map((h, i) => `${i + 1}. ${h.title}`).join('\n');
+  const prompt = `Summarize each of these news headlines into one short sentence each. Be factual and neutral. No preamble. Return exactly one line per headline, numbered to match the input.\n\n${numbered}`;
 
   const result = await model.generateContent(prompt);
-  return result.response.text().trim();
+  const lines = result.response.text().trim().split('\n').filter(Boolean);
+
+  return lines.map((line, i) => {
+    // Strip leading number/punctuation from the AI response
+    const summary = line.replace(/^\d+[\.\)]\s*/, '');
+    const link = headlines[i]?.link;
+    return link ? `• ${summary} ([link](${link}))` : `• ${summary}`;
+  }).join('\n');
 }
 
 export async function getNewsDigest(): Promise<NewsDigest | null> {
