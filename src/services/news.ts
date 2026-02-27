@@ -5,7 +5,7 @@ import { NewsDigest } from '../types';
 
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 const RSS_URL = 'https://news.google.com/rss';
-const MAX_HEADLINES = 10;
+const MAX_HEADLINES = 5;
 
 interface Headline {
   title: string;
@@ -29,17 +29,20 @@ async function summarizeHeadlines(headlines: Headline[]): Promise<string> {
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   const numbered = headlines.map((h, i) => `${i + 1}. ${h.title}`).join('\n');
-  const prompt = `Summarize each of these news headlines into one short sentence each. Be factual and neutral. No preamble. Return exactly one line per headline, numbered to match the input.\n\n${numbered}`;
+  const prompt = `Summarize each of these news headlines into a 4-5 sentence paragraph providing context, key details, and why it matters. Be factual and neutral. No preamble. Number each summary to match the input. Separate each numbered summary with a blank line.\n\n${numbered}`;
 
   const result = await model.generateContent(prompt);
-  const lines = result.response.text().trim().split('\n').filter(Boolean);
+  const text = result.response.text().trim();
 
-  return lines.map((line, i) => {
-    // Strip leading number/punctuation from the AI response
-    const summary = line.replace(/^\d+[\.\)]\s*/, '');
+  // Split on numbered entries (e.g. "1.", "2.")
+  const entries = text.split(/(?=^\d+[\.\)]\s)/m).filter(Boolean);
+
+  return entries.map((entry, i) => {
+    const summary = entry.replace(/^\d+[\.\)]\s*/, '').trim();
     const link = headlines[i]?.link;
-    return link ? `• ${summary} ([link](${link}))` : `• ${summary}`;
-  }).join('\n');
+    const readMore = link ? `[Read more](${link})` : '';
+    return `• ${summary}${readMore ? `\n  ${readMore}` : ''}`;
+  }).join('\n\n');
 }
 
 export async function getNewsDigest(): Promise<NewsDigest | null> {
