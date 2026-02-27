@@ -21,7 +21,7 @@ async function fetchHeadlines(): Promise<string[]> {
 
 async function summarizeHeadlines(headlines: string[]): Promise<string> {
   const genAI = new GoogleGenerativeAI(config.ai.apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   const prompt = `Summarize these news headlines into a concise 2-3 sentence digest. Be factual and neutral. Write flowing prose, no bullet points or preamble.\n\n${headlines.join('\n')}`;
 
