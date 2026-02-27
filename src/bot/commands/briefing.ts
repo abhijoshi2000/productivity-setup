@@ -1,7 +1,6 @@
 import { Context } from 'telegraf';
 import { getTodayTasks, getOverdueTasks, getProductivityStats } from '../../services/todoist';
 import { getTodayEvents } from '../../services/calendar';
-import { getNewsDigest } from '../../services/news';
 import { isCalendarConfigured, config } from '../../config';
 import {
   priorityEmoji,
@@ -19,12 +18,11 @@ import {
 
 // Generate briefing text (reusable by cron and command)
 export async function generateBriefing(): Promise<string> {
-  const [todayTasks, overdueTasks, events, stats, newsDigest] = await Promise.all([
+  const [todayTasks, overdueTasks, events, stats] = await Promise.all([
     getTodayTasks(),
     getOverdueTasks(),
     isCalendarConfigured() ? getTodayEvents() : Promise.resolve([]),
     getProductivityStats(),
-    getNewsDigest(),
   ]);
 
   const now = new Date();
@@ -86,13 +84,6 @@ export async function generateBriefing(): Promise<string> {
     lines.push('No tasks scheduled — enjoy your day! 🎉');
   }
   lines.push('');
-
-  // News digest
-  if (newsDigest) {
-    lines.push('📰 *News Digest*');
-    lines.push(newsDigest.summary);
-    lines.push('');
-  }
 
   // Stats snapshot
   const dailyBar = progressBar(stats.completedToday, stats.dailyGoal, 8);

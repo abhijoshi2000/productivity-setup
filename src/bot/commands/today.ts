@@ -1,7 +1,6 @@
 import { Context } from 'telegraf';
 import { getTodayTasks, getOverdueTasks, getCompletedTasksToday } from '../../services/todoist';
 import { getTodayEvents } from '../../services/calendar';
-import { getNewsDigest } from '../../services/news';
 import { isCalendarConfigured, config } from '../../config';
 import { priorityEmoji, formatTime, formatDueDate, timeUntil, separateAndMergeBusy, formatMeetingBlocks, separateBirthdays, formatBirthdayLines, sortTasksByTime } from '../../services/parser';
 import { setTaskMappings, setTaskListMessageId } from '../../services/session';
@@ -12,12 +11,11 @@ export function registerTodayCommand(bot: any) {
     if (!chatId) return;
 
     try {
-      const [todayTasks, overdueTasks, events, completedTasks, newsDigest] = await Promise.all([
+      const [todayTasks, overdueTasks, events, completedTasks] = await Promise.all([
         getTodayTasks(),
         getOverdueTasks(),
         isCalendarConfigured() ? getTodayEvents() : Promise.resolve([]),
         getCompletedTasksToday(),
-        getNewsDigest(),
       ]);
 
       const lines: string[] = [];
@@ -97,12 +95,6 @@ export function registerTodayCommand(bot: any) {
       const total = allTasks.length;
       lines.push('');
       lines.push(`📊 ${total} remaining · ${completedTasks.length} done`);
-
-      if (newsDigest) {
-        lines.push('');
-        lines.push('📰 *News Digest*');
-        lines.push(newsDigest.summary);
-      }
 
       const sent = await ctx.reply(lines.join('\n'), {
         parse_mode: 'Markdown',
