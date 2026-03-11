@@ -2,6 +2,7 @@ import { Context } from 'telegraf';
 import { isCalendarConfigured, config } from '../../config';
 import { getTodayEvents, getTomorrowEvents, getWeekEvents, startOfDayInTz, findFreeSlots, formatSlotDuration } from '../../services/calendar';
 import { formatTime, formatDate } from '../../services/parser';
+import { getTodayTasks, getTomorrowTasks, getWeekTasks, tasksToTimeBlocks } from '../../services/todoist';
 
 export function registerFreeCommand(bot: any) {
   bot.command('free', async (ctx: Context) => {
@@ -24,11 +25,16 @@ export function registerFreeCommand(bot: any) {
         lines.push(`_(Work hours: ${config.workHoursStart} – ${config.workHoursEnd})_`);
         lines.push('');
 
-        const weekEvents = await getWeekEvents();
+        const [weekEvents, weekTaskList] = await Promise.all([
+          getWeekEvents(),
+          getWeekTasks(),
+        ]);
+        const taskBlocks = tasksToTimeBlocks(weekTaskList);
+        const allWeekEvents = [...weekEvents, ...taskBlocks];
         for (let d = 0; d < 7; d++) {
           const dayStart = startOfDayInTz(d);
           const dayEnd = startOfDayInTz(d + 1);
-          const dayEvents = weekEvents.filter(
+          const dayEvents = allWeekEvents.filter(
             (e) => e.start >= dayStart && e.start < dayEnd,
           );
           const slots = findFreeSlots(dayEvents, dayStart, dayEnd);
@@ -45,8 +51,12 @@ export function registerFreeCommand(bot: any) {
         const isTomorrow = text === 'tomorrow' || text === 'tmrw';
         const dayStart = startOfDayInTz(isTomorrow ? 1 : 0);
         const dayEnd = startOfDayInTz(isTomorrow ? 2 : 1);
-        const events = isTomorrow ? await getTomorrowEvents() : await getTodayEvents();
-        const slots = findFreeSlots(events, dayStart, dayEnd);
+        const [events, taskList] = await Promise.all([
+          isTomorrow ? getTomorrowEvents() : getTodayEvents(),
+          isTomorrow ? getTomorrowTasks() : getTodayTasks(),
+        ]);
+        const allEvents = [...events, ...tasksToTimeBlocks(taskList)];
+        const slots = findFreeSlots(allEvents, dayStart, dayEnd);
         label = isTomorrow ? 'Tomorrow' : 'Today';
 
         lines.push(`🟢 *Free Slots — ${label}*`);

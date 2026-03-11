@@ -1,6 +1,6 @@
 import { TodoistApi } from '@doist/todoist-api-typescript';
 import { config } from '../config';
-import { FormattedTask, DailyStats, ProjectInfo, CompletedTask } from '../types';
+import { FormattedTask, DailyStats, ProjectInfo, CompletedTask, CalendarEvent } from '../types';
 
 const api = new TodoistApi(config.todoist.apiToken);
 
@@ -181,6 +181,23 @@ export async function getCompletedTasksThisWeek(): Promise<CompletedTask[]> {
   } while (cursor);
 
   return allTasks;
+}
+
+// Convert tasks with scheduled time + duration into CalendarEvent objects
+// so they block time in free slot calculations
+export function tasksToTimeBlocks(tasks: FormattedTask[]): CalendarEvent[] {
+  return tasks
+    .filter((t) => t.due?.datetime && t.duration && t.durationUnit === 'minute')
+    .map((t) => {
+      const start = new Date(t.due!.datetime!);
+      const end = new Date(start.getTime() + t.duration! * 60_000);
+      return {
+        summary: t.content,
+        start,
+        end,
+        isAllDay: false,
+      };
+    });
 }
 
 // Project caching (refreshed every 5 minutes)

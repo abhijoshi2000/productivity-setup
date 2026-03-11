@@ -2,7 +2,7 @@ import { Context } from 'telegraf';
 import { Markup } from 'telegraf';
 import { isCalendarConfigured, config } from '../../config';
 import { getWeekEvents, startOfDayInTz, findFreeSlots, formatSlotDuration } from '../../services/calendar';
-import { getWeekTasks, getUndatedTasks } from '../../services/todoist';
+import { getWeekTasks, getUndatedTasks, tasksToTimeBlocks } from '../../services/todoist';
 import { priorityEmoji, formatTime, formatDate } from '../../services/parser';
 import { getSession } from '../../services/session';
 import { FormattedTask, WeekPlanDaySlots } from '../../types';
@@ -28,6 +28,10 @@ export async function showWeekLandscape(ctx: any, chatId: number): Promise<void>
     getUndatedTasks(),
   ]);
 
+  // Merge calendar events with timed tasks that have durations
+  const taskBlocks = tasksToTimeBlocks(weekTasks);
+  const allEvents = [...events, ...taskBlocks];
+
   // Compute free slots for weekdays (Mon-Fri)
   const daySlots: WeekPlanDaySlots[] = [];
   for (let d = 0; d < 7; d++) {
@@ -37,7 +41,7 @@ export async function showWeekLandscape(ctx: any, chatId: number): Promise<void>
     if (dow === 'Saturday' || dow === 'Sunday') continue;
 
     const dayEnd = startOfDayInTz(d + 1);
-    const dayEvents = events.filter(
+    const dayEvents = allEvents.filter(
       (e) => e.start >= dayStart && e.start < dayEnd,
     );
     const slots = findFreeSlots(dayEvents, dayStart, dayEnd);
