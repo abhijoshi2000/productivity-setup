@@ -1,7 +1,8 @@
 import { Context } from 'telegraf';
 import { getTodayTasks, getOverdueTasks, getProductivityStats } from '../../services/todoist';
-import { getTodayEvents } from '../../services/calendar';
+import { getTodayEvents, findFreeSlots, startOfDayInTz, formatSlotDuration } from '../../services/calendar';
 import { isCalendarConfigured, config } from '../../config';
+import { CalendarEvent, MeetingBlock } from '../../types';
 import {
   priorityEmoji,
   formatTime,
@@ -15,6 +16,47 @@ import {
   formatBirthdayLines,
   sortTasksByTime,
 } from '../../services/parser';
+
+function generateDayInsights(events: CalendarEvent[], meetingBlocks: MeetingBlock[]): string[] {
+  const lines: string[] = [];
+  const dayStart = startOfDayInTz(0);
+  const dayEnd = startOfDayInTz(1);
+
+  // Total meeting time from all non-all-day events (not just busy blocks)
+  const timedEvents = events.filter((e) => !e.isAllDay);
+  const totalMeetingMin = meetingBlocks.reduce((sum, b) => sum + Math.round((b.end.getTime() - b.start.getTime()) / 60000), 0);
+
+  // Free slots during work hours
+  const freeSlots = findFreeSlots(timedEvents, dayStart, dayEnd);
+  const totalFreeMin = freeSlots.reduce((sum, s) => sum + s.minutes, 0);
+  const biggestFree = freeSlots.length > 0 ? freeSlots.reduce((a, b) => a.minutes > b.minutes ? a : b) : null;
+
+  if (timedEvents.length === 0) return [];
+
+  lines.push('💡 *Day at a glance*');
+
+  // Day characterization
+  if (totalMeetingMin >= 300) {
+    lines.push(`📛 Heavy meeting day — ${formatSlotDuration(totalMeetingMin)} in meetings`);
+  } else if (totalMeetingMin >= 120) {
+    lines.push(`🟡 Moderate day — ${formatSlotDuration(totalMeetingMin)} in meetings`);
+  } else if (totalMeetingMin > 0) {
+    lines.push(`🟢 Light day — only ${formatSlotDuration(totalMeetingMin)} in meetings`);
+  } else {
+    lines.push('🟢 No meetings — full day for deep work');
+  }
+
+  // Focus time
+  if (biggestFree && totalMeetingMin > 0) {
+    lines.push(`🎯 Best focus block: ${formatTime(biggestFree.start)} – ${formatTime(biggestFree.end)} (${formatSlotDuration(biggestFree.minutes)})`);
+  }
+  if (totalFreeMin > 0 && freeSlots.length > 1) {
+    lines.push(`⏳ ${formatSlotDuration(totalFreeMin)} free across ${freeSlots.length} blocks`);
+  }
+
+  lines.push('');
+  return lines;
+}
 
 // Generate briefing text (reusable by cron and command)
 export async function generateBriefing(): Promise<string> {
@@ -42,12 +84,14 @@ export async function generateBriefing(): Promise<string> {
   const { birthdays, otherEvents } = separateBirthdays(events);
   lines.push(...formatBirthdayLines(birthdays));
 
+  let meetingBlocks: MeetingBlock[] = [];
   if (otherEvents.length > 0) {
-    const { namedEvents, meetingBlocks } = separateAndMergeBusy(otherEvents);
+    const separated = separateAndMergeBusy(otherEvents);
+    meetingBlocks = separated.meetingBlocks;
     lines.push('🗓 *Schedule*');
     const meetingLine = formatMeetingBlocks(meetingBlocks);
     if (meetingLine) lines.push(`${meetingLine}`);
-    for (const event of namedEvents) {
+    for (const event of separated.namedEvents) {
       if (event.isAllDay) {
         lines.push(`📌 ${event.summary} _(all day)_`);
       } else {
@@ -58,6 +102,9 @@ export async function generateBriefing(): Promise<string> {
     }
     lines.push('');
   }
+
+  // Day insights
+  lines.push(...generateDayInsights(otherEvents, meetingBlocks));
 
   // Overdue
   if (overdueTasks.length > 0) {
