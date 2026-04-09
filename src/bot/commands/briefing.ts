@@ -1,5 +1,5 @@
 import { Context } from 'telegraf';
-import { getTodayTasks, getOverdueTasks, getProductivityStats } from '../../services/todoist';
+import { getTodayTasks, getOverdueTasks, getProductivityStats, getCompletedTasksToday } from '../../services/todoist';
 import { getTodayEvents, findFreeSlots, startOfDayInTz, formatSlotDuration } from '../../services/calendar';
 import { isCalendarConfigured, config } from '../../config';
 import { CalendarEvent, MeetingBlock } from '../../types';
@@ -60,11 +60,12 @@ function generateDayInsights(events: CalendarEvent[], meetingBlocks: MeetingBloc
 
 // Generate briefing text (reusable by cron and command)
 export async function generateBriefing(): Promise<string> {
-  const [todayTasks, overdueTasks, events, stats] = await Promise.all([
+  const [todayTasks, overdueTasks, events, stats, completedTasks] = await Promise.all([
     getTodayTasks(),
     getOverdueTasks(),
     isCalendarConfigured() ? getTodayEvents() : Promise.resolve([]),
     getProductivityStats(),
+    getCompletedTasksToday(),
   ]);
 
   const now = new Date();
@@ -131,6 +132,15 @@ export async function generateBriefing(): Promise<string> {
     lines.push('No tasks scheduled — enjoy your day! 🎉');
   }
   lines.push('');
+
+  // Completed tasks
+  if (completedTasks.length > 0) {
+    lines.push(`✔️ *Completed Today (${completedTasks.length})*`);
+    for (const task of completedTasks) {
+      lines.push(`~${task.content}~`);
+    }
+    lines.push('');
+  }
 
   // Stats snapshot
   const dailyBar = progressBar(stats.completedToday, stats.dailyGoal, 8);
