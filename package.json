@@ -19,7 +19,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@doist/todoist-api-typescript": "^6.5.0",
+    "@doist/todoist-api-typescript": "^7.10.0",
     "@google/generative-ai": "^0.24.1",
     "canvas": "^3.1.0",
     "dotenv": "^17.3.1",
