@@ -1,15 +1,15 @@
 import express from 'express';
 import cron from 'node-cron';
+import { Telegraf } from 'telegraf';
 import { config, isCalendarConfigured } from './config';
-import { createBot } from './bot';
-import { generateBriefing } from './bot/commands/briefing';
-import { generateTimelineBuffer } from './bot/commands/timeline';
 import { generateEvening } from './bot/commands/evening';
-import { getUpcomingEvents } from './services/calendar';
+import { getUpcomingEvents, getTodayBirthdays } from './services/calendar';
 import { formatTime } from './services/parser';
 
 async function main() {
-  const bot = createBot();
+  // Cron-only mode: use a minimal Telegraf instance for sending messages.
+  // Claude Code handles all incoming messages via the Telegram plugin.
+  const bot = new Telegraf(config.telegram.botToken);
   const app = express();
 
   // Health check endpoint
@@ -17,45 +17,14 @@ async function main() {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
-  // Start bot: webhook or long polling
-  if (config.webhook.url) {
-    const webhookPath = `/webhook/${bot.secretPathComponent()}`;
-    app.use(express.json());
-    app.use(webhookPath, (req, res) => bot.handleUpdate(req.body, res));
-
-    await bot.telegram.setWebhook(`${config.webhook.url}${webhookPath}`);
-    console.log(`🌐 Webhook mode: ${config.webhook.url}${webhookPath}`);
-  } else {
-    await bot.launch();
-    console.log('🤖 Bot started (long polling)');
-  }
-
-  // Start Express server
+  // Start Express server (health check only — no webhook, no polling)
   const port = config.webhook.port;
   app.listen(port, () => {
-    console.log(`🚀 Server running on port ${port}`);
+    console.log(`🚀 Cron service running on port ${port} (no polling — Claude Code handles messages)`);
   });
 
-  // Daily briefing cron job
-  cron.schedule(config.briefingCron, async () => {
-    console.log('⏰ Running daily briefing cron...');
-    try {
-      const [text, timelineBuffer] = await Promise.all([
-        generateBriefing(),
-        generateTimelineBuffer(),
-      ]);
-      await bot.telegram.sendMessage(config.telegram.allowedUserId, text, {
-        parse_mode: 'Markdown',
-      });
-      await bot.telegram.sendPhoto(config.telegram.allowedUserId, {
-        source: timelineBuffer,
-        filename: 'timeline.png',
-      });
-      console.log('✅ Daily briefing sent');
-    } catch (error) {
-      console.error('❌ Failed to send daily briefing:', error);
-    }
-  }, { timezone: config.timezone });
+  // Daily briefing is now handled by the Claude Code scheduled trigger.
+  // Legacy cron job disabled to avoid duplicate messages.
 
   // Evening wrap-up cron job
   cron.schedule(config.eveningCron, async () => {
@@ -70,6 +39,35 @@ async function main() {
       console.error('❌ Failed to send evening wrap-up:', error);
     }
   }, { timezone: config.timezone });
+
+  // Birthday notification cron job
+  if (isCalendarConfigured()) {
+    cron.schedule(config.birthdayCron, async () => {
+      console.log('🎂 Checking for birthdays...');
+      try {
+        const birthdays = await getTodayBirthdays();
+        if (birthdays.length > 0) {
+          const names = birthdays.map((b) => {
+            // Strip "'s birthday" suffix to get the name
+            return b.summary.replace(/'s birthday$/i, '').replace(/ - Birthday$/i, '').trim();
+          });
+          const lines = names.map((name) => `🎂 ${name}`).join('\n');
+          const header = birthdays.length === 1
+            ? `🎉 *Birthday today!*`
+            : `🎉 *${birthdays.length} birthdays today!*`;
+          await bot.telegram.sendMessage(
+            config.telegram.allowedUserId,
+            `${header}\n\n${lines}`,
+            { parse_mode: 'Markdown' },
+          );
+          console.log(`🎂 Sent ${birthdays.length} birthday notification(s)`);
+        }
+      } catch (error) {
+        console.error('❌ Birthday check error:', error);
+      }
+    }, { timezone: config.timezone });
+    console.log(`🎂 Birthday notifications active (${config.birthdayCron})`);
+  }
 
   // Event reminder cron job
   if (isCalendarConfigured()) {
@@ -116,7 +114,6 @@ async function main() {
   // Graceful shutdown
   const shutdown = (signal: string) => {
     console.log(`\n${signal} received — shutting down...`);
-    bot.stop(signal);
     process.exit(0);
   };
 

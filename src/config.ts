@@ -29,6 +29,7 @@ export const config = {
       .map((id) => id.trim())
       .filter(Boolean),
     writableCalendarId: optionalEnv('GOOGLE_WRITABLE_CALENDAR_ID', ''),
+    birthdayCalendarId: optionalEnv('GOOGLE_BIRTHDAY_CALENDAR_ID', ''),
   },
   ai: {
     apiKey: optionalEnv('GOOGLE_AI_API_KEY', ''),
@@ -44,6 +45,7 @@ export const config = {
   reminderMinutes: parseInt(optionalEnv('REMINDER_MINUTES', '15'), 10),
   workHoursStart: optionalEnv('WORK_HOURS_START', '09:00'),
   workHoursEnd: optionalEnv('WORK_HOURS_END', '18:00'),
+  birthdayCron: optionalEnv('BIRTHDAY_CRON', '0 8 * * *'),
 };
 
 export const isCalendarConfigured = (): boolean =>

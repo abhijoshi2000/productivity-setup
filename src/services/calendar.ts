@@ -224,6 +224,36 @@ export function findFreeSlots(events: CalendarEvent[], dayStart: Date, dayEnd: D
   return slots;
 }
 
+export async function getTodayBirthdays(): Promise<CalendarEvent[]> {
+  if (!isCalendarConfigured()) return [];
+
+  const dayStart = startOfDayInTz(0);
+  const dayEnd = startOfDayInTz(1);
+
+  // Check all configured calendars + the dedicated birthday calendar if set
+  const calendarIds = [...config.google.calendarIds];
+  if (config.google.birthdayCalendarId && !calendarIds.includes(config.google.birthdayCalendarId)) {
+    calendarIds.push(config.google.birthdayCalendarId);
+  }
+
+  const results = await Promise.allSettled(
+    calendarIds.map((id) => getEventsForCalendar(id, dayStart, dayEnd)),
+  );
+
+  const birthdays: CalendarEvent[] = [];
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      for (const event of result.value) {
+        if (event.isAllDay && /birthday/i.test(event.summary)) {
+          birthdays.push(event);
+        }
+      }
+    }
+  }
+
+  return birthdays;
+}
+
 export function formatSlotDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
