@@ -13,6 +13,21 @@ function optionalEnv(name: string, fallback: string): string {
   return process.env[name] || fallback;
 }
 
+function fixPemKey(raw: string): string {
+  // Try standard \n escape replacement first
+  let key = raw.replace(/\\n/g, '\n');
+  // If still no newlines, reconstruct PEM format with 64-char lines
+  if (key.length > 0 && !key.includes('\n')) {
+    const body = key
+      .replace('-----BEGIN PRIVATE KEY-----', '')
+      .replace('-----END PRIVATE KEY-----', '')
+      .replace(/\s/g, '');
+    const lines = body.match(/.{1,64}/g) || [];
+    key = ['-----BEGIN PRIVATE KEY-----', ...lines, '-----END PRIVATE KEY-----', ''].join('\n');
+  }
+  return key;
+}
+
 export const config = {
   telegram: {
     botToken: requireEnv('TELEGRAM_BOT_TOKEN'),
@@ -23,7 +38,7 @@ export const config = {
   },
   google: {
     serviceAccountEmail: optionalEnv('GOOGLE_SERVICE_ACCOUNT_EMAIL', ''),
-    privateKey: optionalEnv('GOOGLE_PRIVATE_KEY', '').replace(/\\n/g, '\n'),
+    privateKey: fixPemKey(optionalEnv('GOOGLE_PRIVATE_KEY', '')),
     calendarIds: optionalEnv('GOOGLE_CALENDAR_IDS', '')
       .split(',')
       .map((id) => id.trim())
