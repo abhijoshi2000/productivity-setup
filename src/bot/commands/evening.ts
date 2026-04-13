@@ -6,9 +6,6 @@ import {
   priorityEmoji,
   formatTime,
   formatDueDate,
-  progressBar,
-  separateAndMergeBusy,
-  formatMeetingBlocks,
 } from '../../services/parser';
 
 export async function generateEvening(): Promise<string> {
@@ -61,15 +58,19 @@ export async function generateEvening(): Promise<string> {
   lines.push('📋 *Tomorrow Preview*');
 
   if (tomorrowEvents.length > 0) {
-    const { namedEvents, meetingBlocks } = separateAndMergeBusy(tomorrowEvents);
-    const meetingLine = formatMeetingBlocks(meetingBlocks);
-    if (meetingLine) lines.push(`${meetingLine}`);
-    for (const event of namedEvents) {
-      if (event.isAllDay) {
-        lines.push(`📌 ${event.summary} _(all day)_`);
-      } else {
-        lines.push(`🕐 ${formatTime(event.start)} — ${event.summary}`);
-      }
+    // Show all events individually, sorted by start time
+    const timedEvents = tomorrowEvents
+      .filter((e) => !e.isAllDay)
+      .sort((a, b) => a.start.getTime() - b.start.getTime());
+    const allDayEvents = tomorrowEvents.filter((e) => e.isAllDay);
+
+    for (const event of allDayEvents) {
+      lines.push(`📌 ${event.summary} _(all day)_`);
+    }
+    for (const event of timedEvents) {
+      const duration = Math.round((event.end.getTime() - event.start.getTime()) / 60000);
+      const durStr = duration >= 60 ? `${Math.floor(duration / 60)}h${duration % 60 ? ` ${duration % 60}m` : ''}` : `${duration}m`;
+      lines.push(`🕐 ${formatTime(event.start)} — ${event.summary} _(${durStr})_`);
     }
   } else {
     lines.push('No events scheduled');
