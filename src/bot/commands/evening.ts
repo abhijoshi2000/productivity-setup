@@ -58,19 +58,26 @@ export async function generateEvening(): Promise<string> {
   lines.push('📋 *Tomorrow Preview*');
 
   if (tomorrowEvents.length > 0) {
-    // Show all events individually, sorted by start time
-    const timedEvents = tomorrowEvents
-      .filter((e) => !e.isAllDay)
-      .sort((a, b) => a.start.getTime() - b.start.getTime());
     const allDayEvents = tomorrowEvents.filter((e) => e.isAllDay);
+    const namedEvents = tomorrowEvents.filter((e) => !e.isAllDay && e.summary !== 'Busy')
+      .sort((a, b) => a.start.getTime() - b.start.getTime());
+    const busyEvents = tomorrowEvents.filter((e) => !e.isAllDay && e.summary === 'Busy')
+      .sort((a, b) => a.start.getTime() - b.start.getTime());
 
     for (const event of allDayEvents) {
       lines.push(`📌 ${event.summary} _(all day)_`);
     }
-    for (const event of timedEvents) {
-      const duration = Math.round((event.end.getTime() - event.start.getTime()) / 60000);
-      const durStr = duration >= 60 ? `${Math.floor(duration / 60)}h${duration % 60 ? ` ${duration % 60}m` : ''}` : `${duration}m`;
-      lines.push(`🕐 ${formatTime(event.start)} — ${event.summary} _(${durStr})_`);
+    // Summarize busy blocks
+    if (busyEvents.length > 0) {
+      const first = busyEvents[0];
+      const last = busyEvents[busyEvents.length - 1];
+      const totalMin = busyEvents.reduce((sum, e) => sum + Math.round((e.end.getTime() - e.start.getTime()) / 60000), 0);
+      const durStr = totalMin >= 60 ? `${Math.floor(totalMin / 60)}h${totalMin % 60 ? ` ${totalMin % 60}m` : ''}` : `${totalMin}m`;
+      lines.push(`🏢 ${busyEvents.length} meetings, ${formatTime(first.start)} – ${formatTime(last.end)} _(${durStr} total)_`);
+    }
+    // Show named events
+    for (const event of namedEvents) {
+      lines.push(`🕐 ${formatTime(event.start)} — ${event.summary}`);
     }
   } else {
     lines.push('No events scheduled');
