@@ -38,7 +38,7 @@ export async function getTasksByFilter(filter: string): Promise<FormattedTask[]>
     due: task.due
       ? {
           date: task.due.date,
-          datetime: task.due.datetime ?? undefined,
+          datetime: task.due.datetime ?? (task.due.date.includes('T') ? task.due.date : undefined),
           isRecurring: task.due.isRecurring,
           string: task.due.string ?? undefined,
         }
